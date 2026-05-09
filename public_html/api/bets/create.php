@@ -58,6 +58,13 @@ try {
         [$betId]
     );
 
+    // Notify Admins
+    $db->query(
+        "INSERT INTO notifications (user_id, type, message, related_id) 
+         SELECT id, 'bet_pending', ?, ? FROM users WHERE role = 'admin'",
+        ["New bet pending review: " . Security::sanitize($_POST['title']), $betId]
+    );
+
     $db->commit();
     Response::success(['bet_id' => (int)$betId], "Bet submitted for review");
 

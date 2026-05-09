@@ -16,6 +16,8 @@ struct BettingAppApp: App {
 }
 
 struct MainTabView: View {
+    @ObservedObject var authStore = AuthStore.shared
+    
     var body: some View {
         TabView {
             FeedView()
@@ -23,12 +25,24 @@ struct MainTabView: View {
                     Label("Home", systemImage: "house.fill")
                 }
             
-            Text("Leaderboard")
+            UserSearchView()
                 .tabItem {
-                    Label("Rankings", systemImage: "trophy.fill")
+                    Label("Explore", systemImage: "magnifyingglass")
                 }
             
-            Text("Profile")
+            if authStore.currentUser?.role == "admin" {
+                AdminView()
+                    .tabItem {
+                        Label("Admin", systemImage: "shield.fill")
+                    }
+            }
+            
+            NotificationsView()
+                .tabItem {
+                    Label("Activity", systemImage: "bell.fill")
+                }
+            
+            ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person.fill")
                 }

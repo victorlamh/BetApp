@@ -2,17 +2,18 @@ import Foundation
 
 struct Bet: Codable, Identifiable {
     let id: Int
-    let creatorUserId: Int
+    let creatorUserId: Int?
+    let creatorId: Int?
     let creatorName: String
     let title: String
     let description: String?
     let category: String?
-    let visibility: String
+    let visibility: String?
     let status: String
-    let isBoosted: Int
-    let proofRequired: Int
+    let isBoosted: Int?
+    let proofRequired: Int?
     let closeAt: String
-    let outcomes: [BetOutcome]
+    let outcomes: [BetOutcome]?
     let myWager: Wager?
     
     var statusLabel: String {

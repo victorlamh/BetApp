@@ -25,25 +25,33 @@ $db = DB::getInstance();
 try {
     $db->beginTransaction();
 
-    if ($action === 'approve') {
-        $db->query("UPDATE bets SET status = 'live' WHERE id = ?", [$betId]);
-        $status = 'approved';
+    $newStatus = ($action === 'approve') ? 'live' : 'rejected';
+    $reviewStatus = ($action === 'approve') ? 'approved' : 'rejected';
+
+    // 1. Update the bet status
+    $db->query("UPDATE bets SET status = ? WHERE id = ?", [$newStatus, $betId]);
+
+    // 2. Update moderation review if it exists (no LIMIT, safe for all MySQL configs)
+    $existing = $db->fetchOne("SELECT id FROM moderation_reviews WHERE bet_id = ? AND status = 'pending'", [$betId]);
+    if ($existing) {
+        $db->query(
+            "UPDATE moderation_reviews SET status = ?, moderator_id = ?, notes = ?, reviewed_at = NOW() WHERE id = ?",
+            [$reviewStatus, Auth::userId(), $notes, $existing['id']]
+        );
     } else {
-        $db->query("UPDATE bets SET status = 'rejected' WHERE id = ?", [$betId]);
-        $status = 'rejected';
+        // Insert one if missing (older bets may not have a record)
+        $db->query(
+            "INSERT INTO moderation_reviews (bet_id, review_type, status, moderator_id, notes, reviewed_at) VALUES (?, 'publication', ?, ?, ?, NOW())",
+            [$betId, $reviewStatus, Auth::userId(), $notes]
+        );
     }
 
-    // Update moderation review record
-    $db->query(
-        "UPDATE moderation_reviews SET status = ?, moderator_id = ?, notes = ?, reviewed_at = NOW() 
-         WHERE bet_id = ? AND status = 'pending' LIMIT 1",
-        [$status, Auth::userId(), $notes, $betId]
-    );
-
-    // Notify the creator
+    // 3. Notify the creator
     $bet = $db->fetchOne("SELECT creator_user_id, title FROM bets WHERE id = ?", [$betId]);
     if ($bet) {
-        $msg = $action === 'approve' ? "Your bet '{$bet['title']}' has been approved!" : "Your bet '{$bet['title']}' was rejected.";
+        $msg = ($action === 'approve')
+            ? "Your bet '{$bet['title']}' has been approved and is now live!"
+            : "Your bet '{$bet['title']}' was rejected.";
         $db->query(
             "INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, ?, ?, ?)",
             [$bet['creator_user_id'], $action === 'approve' ? 'bet_approved' : 'bet_rejected', $msg, $betId]
@@ -51,9 +59,11 @@ try {
     }
 
     $db->commit();
-    Response::success(null, "Bet " . ($action === 'approve' ? "approved" : "rejected"));
+    file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] review.php SUCCESS - bet $betId $action\n", FILE_APPEND);
+    Response::success(null, "Bet " . ($action === 'approve' ? "approved and is now live" : "rejected"));
 
 } catch (Exception $e) {
     $db->rollBack();
-    Response::error($e->getMessage());
+    file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] review.php SQL ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
+    Response::error("Failed: " . $e->getMessage());
 }

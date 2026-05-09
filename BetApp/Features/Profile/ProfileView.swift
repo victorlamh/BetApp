@@ -64,6 +64,15 @@ struct ProfileView: View {
                                         .cornerRadius(AppTheme.Radius.m)
                                 }
                             }
+                            
+                            // Debug Info (Hidden in production)
+                            VStack(spacing: 4) {
+                                Text("User ID: \(authStore.currentUser?.id ?? 0)")
+                                Text("Role: \(authStore.currentUser?.role ?? "unknown")")
+                            }
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(AppTheme.textSecondary.opacity(0.5))
+                            .padding(.top, 40)
                         }
                         .padding()
                     }

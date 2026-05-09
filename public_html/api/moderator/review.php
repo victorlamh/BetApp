@@ -59,7 +59,7 @@ try {
 
     $db->commit();
     file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] review.php SUCCESS - bet $betId $action\n", FILE_APPEND);
-    Response::success(null, "Bet " . ($action === 'approve' ? "approved and is now live" : "rejected"));
+    Response::success(['status' => 'ok', 'bet_id' => $betId, 'action' => $action], "Bet " . ($action === 'approve' ? "approved and is now live" : "rejected"));
 
 } catch (Exception $e) {
     $db->rollBack();

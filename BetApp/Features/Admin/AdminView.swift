@@ -122,7 +122,7 @@ struct AdminBetCard: View {
         actionResult = "Sending..."
         Task {
             do {
-                struct SimpleResponse: Decodable { let status: String }
+                struct SimpleResponse: Decodable { let status: String; let betId: Int?; let action: String? }
                 let _: SimpleResponse = try await APIClient.shared.request(
                     "moderator/review.php",
                     method: "POST",

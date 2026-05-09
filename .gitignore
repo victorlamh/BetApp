@@ -1,0 +1,11 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.xcscheme
+*.xcuserdata
+.DS_Store
+
+# PHP
+# public_html/api/config/env.php # Uncomment if you want to keep credentials private

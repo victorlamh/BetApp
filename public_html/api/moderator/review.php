@@ -31,17 +31,16 @@ try {
     // 1. Update the bet status
     $db->query("UPDATE bets SET status = ? WHERE id = ?", [$newStatus, $betId]);
 
-    // 2. Update moderation review if it exists (no LIMIT, safe for all MySQL configs)
+    // 2. Update moderation review if it exists
     $existing = $db->fetchOne("SELECT id FROM moderation_reviews WHERE bet_id = ? AND status = 'pending'", [$betId]);
     if ($existing) {
         $db->query(
-            "UPDATE moderation_reviews SET status = ?, moderator_id = ?, notes = ?, reviewed_at = NOW() WHERE id = ?",
+            "UPDATE moderation_reviews SET status = ?, moderator_user_id = ?, decision_reason = ?, updated_at = NOW() WHERE id = ?",
             [$reviewStatus, Auth::userId(), $notes, $existing['id']]
         );
     } else {
-        // Insert one if missing (older bets may not have a record)
         $db->query(
-            "INSERT INTO moderation_reviews (bet_id, review_type, status, moderator_id, notes, reviewed_at) VALUES (?, 'publication', ?, ?, ?, NOW())",
+            "INSERT INTO moderation_reviews (bet_id, review_type, status, moderator_user_id, decision_reason) VALUES (?, 'publication', ?, ?, ?)",
             [$betId, $reviewStatus, Auth::userId(), $notes]
         );
     }

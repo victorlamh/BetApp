@@ -11,7 +11,7 @@ return [
         'charset' => 'utf8mb4',
     ],
     'app' => [
-        'url' => 'https://inject.victorlamache.com',
+        'url' => 'https://inject.victorlamache.com/api',
         'debug' => false,
         'timezone' => 'UTC',
     ],

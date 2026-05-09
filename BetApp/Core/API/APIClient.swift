@@ -10,7 +10,7 @@ enum APIError: Error {
 
 class APIClient {
     static let shared = APIClient()
-    private let baseURL = "https://inject.victorlamache.com" // Replace with actual URL
+    private let baseURL = "https://inject.victorlamache.com/api" // Replace with actual URL
     
     func request<T: Decodable>(_ endpoint: String, method: String = "GET", body: [String: Any]? = nil) async throws -> T {
         guard let url = URL(string: "\(baseURL)/\(endpoint)") else {

@@ -3,6 +3,7 @@
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Hide errors in production
+ob_start(); // Start output buffering to catch accidental output
 
 require_once __DIR__ . '/core/db.php';
 require_once __DIR__ . '/core/response.php';

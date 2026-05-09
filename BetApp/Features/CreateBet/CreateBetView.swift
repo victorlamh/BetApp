@@ -9,6 +9,8 @@ struct CreateBetView: View {
         OutcomeInput(label: "Yes", coefficient: "2.00"),
         OutcomeInput(label: "No", coefficient: "2.00")
     ]
+    @State private var useSlider: Bool = true
+    @State private var probability: Double = 0.5 // 50%
     @State private var isLoading = false
     @State private var errorMessage: String?
     
@@ -31,46 +33,99 @@ struct CreateBetView: View {
                                 .foregroundColor(AppTheme.textPrimary)
                         }
                         
-                        // Section: Outcomes
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
-                            HStack {
-                                Text("OUTCOMES")
+                        // Section: Odds Mode Toggle
+                        HStack {
+                            Text("SET THE ODDS")
+                                .font(.caption2)
+                                .foregroundColor(AppTheme.textSecondary)
+                            Spacer()
+                            Picker("Mode", selection: $useSlider) {
+                                Text("Simple").tag(true)
+                                Text("Manual").tag(false)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 150)
+                        }
+                        
+                        if useSlider && outcomes.count == 2 {
+                            // Section: Smart Slider
+                            VStack(spacing: AppTheme.Spacing.m) {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(outcomes[0].label)
+                                            .font(.headline)
+                                        Text("\(String(format: "%.2f", 1.0 / probability))x")
+                                            .foregroundColor(AppTheme.primary)
+                                            .font(.title2).bold()
+                                    }
+                                    Spacer()
+                                    VStack(alignment: .trailing) {
+                                        Text(outcomes[1].label)
+                                            .font(.headline)
+                                        Text("\(String(format: "%.2f", 1.0 / (1.0 - probability)))x")
+                                            .foregroundColor(AppTheme.primary)
+                                            .font(.title2).bold()
+                                    }
+                                }
+                                
+                                Slider(value: $probability, in: 0.05...0.95)
+                                    .tint(AppTheme.primary)
+                                
+                                Text("Slide to set the favorite. Center is 50/50.")
                                     .font(.caption2)
                                     .foregroundColor(AppTheme.textSecondary)
-                                Spacer()
-                                Button(action: addOutcome) {
-                                    Image(systemName: "plus.circle")
-                                        .foregroundColor(AppTheme.primary)
-                                }
                             }
-                            
-                            ForEach($outcomes) { $outcome in
-                                HStack {
-                                    TextField("Label", text: $outcome.label)
-                                        .padding()
-                                        .background(AppTheme.cardBackground)
-                                        .cornerRadius(AppTheme.Radius.s)
-                                    
-                                    TextField("Odds", text: $outcome.coefficient)
-                                        .keyboardType(.decimalPad)
-                                        .frame(width: 80)
-                                        .padding()
-                                        .background(AppTheme.cardBackground)
-                                        .cornerRadius(AppTheme.Radius.s)
+                            .padding()
+                            .background(AppTheme.cardBackground)
+                            .cornerRadius(AppTheme.Radius.m)
+                        } else {
+                            // Section: Manual Outcomes
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
+                                ForEach($outcomes) { $outcome in
+                                    HStack {
+                                        TextField("Label", text: $outcome.label)
+                                            .padding()
+                                            .background(AppTheme.cardBackground)
+                                            .cornerRadius(AppTheme.Radius.s)
+                                        
+                                        TextField("Odds", text: $outcome.coefficient)
+                                            .keyboardType(.decimalPad)
+                                            .frame(width: 80)
+                                            .padding()
+                                            .background(AppTheme.cardBackground)
+                                            .cornerRadius(AppTheme.Radius.s)
+                                    }
+                                }
+                                
+                                if outcomes.count < 5 {
+                                    Button(action: addOutcome) {
+                                        Label("Add Outcome", systemImage: "plus.circle")
+                                            .font(.caption)
+                                            .foregroundColor(AppTheme.primary)
+                                    }
+                                    .padding(.top, 5)
                                 }
                             }
                         }
                         
                         // Section: Date
-                        DatePicker("Close Betting At", selection: $closeDate, in: Date()...)
-                            .padding()
-                            .background(AppTheme.cardBackground)
-                            .cornerRadius(AppTheme.Radius.m)
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
+                            Text("BETTING CLOSES AT")
+                                .font(.caption2)
+                                .foregroundColor(AppTheme.textSecondary)
+                            DatePicker("", selection: $closeDate, in: Date()...)
+                                .labelsHidden()
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(AppTheme.cardBackground)
+                                .cornerRadius(AppTheme.Radius.m)
+                        }
                         
                         if let error = errorMessage {
                             Text(error)
                                 .font(.caption)
                                 .foregroundColor(AppTheme.danger)
+                                .frame(maxWidth: .infinity, alignment: .center)
                         }
                         
                         Button(action: submitBet) {
@@ -87,6 +142,7 @@ struct CreateBetView: View {
                         .background(AppTheme.primary)
                         .cornerRadius(AppTheme.Radius.m)
                         .disabled(isLoading || title.isEmpty)
+                        .padding(.top, 20)
                     }
                     .padding()
                 }
@@ -102,7 +158,8 @@ struct CreateBetView: View {
     }
     
     private func addOutcome() {
-        outcomes.append(OutcomeInput(label: "", coefficient: "2.00"))
+        outcomes.append(OutcomeInput(label: "Outcome \(outcomes.count + 1)", coefficient: "2.00"))
+        useSlider = false // Force manual if more than 2 outcomes
     }
     
     private func submitBet() {
@@ -112,17 +169,28 @@ struct CreateBetView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "YYYY-MM-dd HH:mm:ss"
         
+        // Final coefficients calculation
+        var finalOutcomes: [[String: Any]] = []
+        if useSlider && outcomes.count == 2 {
+            finalOutcomes = [
+                ["label": outcomes[0].label, "coefficient": 1.0 / probability],
+                ["label": outcomes[1].label, "coefficient": 1.0 / (1.0 - probability)]
+            ]
+        } else {
+            finalOutcomes = outcomes.map { ["label": $0.label, "coefficient": Double($0.coefficient) ?? 2.0] }
+        }
+        
         let body: [String: Any] = [
             "title": title,
             "description": description,
             "close_at": formatter.string(from: closeDate),
-            "outcomes": outcomes.map { ["label": $0.label, "coefficient": Double($0.coefficient) ?? 1.0] }
+            "outcomes": finalOutcomes
         ]
         
         Task {
             do {
-                struct CreateResponse: Decodable { let status: String }
-                let _: CreateResponse = try await APIClient.shared.request(
+                struct CreateResponse: Decodable { let status: String; let message: String? }
+                let response: CreateResponse = try await APIClient.shared.request(
                     "bets/create.php",
                     method: "POST",
                     body: body
@@ -132,10 +200,18 @@ struct CreateBetView: View {
                     isLoading = false
                     dismiss()
                 }
+            } catch let error as APIError {
+                DispatchQueue.main.async {
+                    isLoading = false
+                    switch error {
+                    case .serverError(let msg): self.errorMessage = msg
+                    default: self.errorMessage = "Check your connection and try again."
+                    }
+                }
             } catch {
                 DispatchQueue.main.async {
                     isLoading = false
-                    errorMessage = "Failed to create bet. Check your inputs."
+                    self.errorMessage = "Failed to create bet."
                 }
             }
         }

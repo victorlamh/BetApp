@@ -59,7 +59,7 @@ try {
     );
 
     $db->commit();
-    Response::success(['bet_id' => $betId], "Bet submitted for review");
+    Response::success(['bet_id' => (int)$betId], "Bet submitted for review");
 
 } catch (Exception $e) {
     $db->rollBack();

@@ -57,7 +57,7 @@ class Auth {
     }
 
     public static function userId() {
-        return self::$currentUser['user_id'] ?? null;
+        return isset(self::$currentUser['user_id']) ? (int)self::$currentUser['user_id'] : null;
     }
 
     public static function requireAuth() {

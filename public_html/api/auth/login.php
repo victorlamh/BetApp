@@ -31,7 +31,7 @@ $token = Auth::generateToken($user['id']);
 Response::success([
     'token' => $token,
     'user' => [
-        'id' => $user['id'],
+        'id' => (int)$user['id'],
         'username' => $user['username'],
         'display_name' => $user['display_name'],
         'role' => $user['role']

@@ -12,12 +12,16 @@ $displayName = Security::sanitize($_POST['display_name']);
 $email = !empty($_POST['email']) ? Security::sanitize($_POST['email']) : null;
 $passwordHash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
+// DEBUG LOGGING
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Reg Attempt: User=" . ($_POST['username'] ?? 'MISSING') . " Data=" . json_encode($_POST) . "\n", FILE_APPEND);
+
 $db = DB::getInstance();
 
 // Check uniqueness
-$existing = $db->fetchOne("SELECT id FROM users WHERE username = ?", [$username]);
+$existing = $db->fetchOne("SELECT id, username FROM users WHERE username = ?", [$username]);
 if ($existing) {
-    Response::error("Username already taken", 409);
+    file_put_contents(__DIR__ . '/../debug_log.txt', "CONFLICT: Username $username already exists with ID " . $existing['id'] . "\n", FILE_APPEND);
+    Response::error("Username '$username' is already taken.", 409);
 }
 
 try {
@@ -43,10 +47,13 @@ try {
     $token = Auth::generateToken($userId);
     $db->commit();
 
+    file_put_contents(__DIR__ . '/../debug_log.txt', "SUCCESS: User $username created with ID $userId\n", FILE_APPEND);
+
+    ob_clean(); // Clear any accidental whitespace or warnings
     Response::success([
         'token' => $token,
         'user' => [
-            'id' => $userId,
+            'id' => (int)$userId,
             'username' => $username,
             'display_name' => $displayName,
             'role' => 'player'
@@ -56,5 +63,6 @@ try {
 
 } catch (Exception $e) {
     $db->rollBack();
+    file_put_contents(__DIR__ . '/../debug_log.txt', "SQL ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
     Response::error("Registration failed: " . $e->getMessage());
 }

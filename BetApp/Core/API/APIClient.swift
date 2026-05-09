@@ -30,14 +30,14 @@ class APIClient {
             request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         }
         
-        let (data, response) = try {
-            do {
-                return try await URLSession.shared.data(for: request)
-            } catch {
-                print("🌐 Network Error: \(error)")
-                throw APIError.networkError
-            }
-        }()
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            print("🌐 Network Error: \(error)")
+            throw APIError.networkError
+        }
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.serverError("Invalid response from server")

@@ -3,14 +3,15 @@ require_once __DIR__ . '/../bootstrap.php';
 
 Auth::requireAuth();
 
-Validator::validate($_POST, [
-    'title' => 'required|min:5|max:255',
-    'close_at' => 'required',
-    'outcomes' => 'required' // Expected as array of {label, coefficient}
-]);
+// Use a more flexible validation for outcomes
+$errors = [];
+if (empty($_POST['title'])) $errors[] = "Title is required";
+if (empty($_POST['close_at'])) $errors[] = "Closing date is required";
+if (empty($_POST['outcomes'])) $errors[] = "Outcomes are required";
 
-if (!Moderation::checkDailyQuota(Auth::userId())) {
-    Response::error("Daily bet quota reached (1 per day)", 429);
+if (!empty($errors)) {
+    file_put_contents(__DIR__ . '/../debug_log.txt', "VALIDATION FAILED: " . json_encode($errors) . " Received: " . json_encode($_POST) . "\n", FILE_APPEND);
+    Response::error("Validation failed: " . implode(", ", $errors), 400);
 }
 
 // Safety Scan

@@ -5,63 +5,68 @@ struct ProfileView: View {
     @State private var followersCount = 0
     @State private var followingCount = 0
     @State private var walletBalance: Double = 0.0
+    @State private var isLoading = true
     
     var body: some View {
         NavigationView {
             ZStack {
                 AppTheme.background.ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: AppTheme.Spacing.xl) {
-                        // Header: Avatar & Info
-                        VStack(spacing: AppTheme.Spacing.m) {
-                            Circle()
-                                .fill(AppTheme.cardBackground)
-                                .frame(width: 100, height: 100)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(AppTheme.primary)
-                                )
-                                .shadow(color: AppTheme.primary.opacity(0.2), radius: 10)
-                            
-                            VStack(spacing: 4) {
-                                Text(authStore.currentUser?.displayName ?? "User")
-                                    .font(.title2).bold()
-                                    .foregroundColor(AppTheme.textPrimary)
-                                Text("@\(authStore.currentUser?.username ?? "username")")
-                                    .font(.subheadline)
-                                    .foregroundColor(AppTheme.textSecondary)
+                if isLoading {
+                    ProgressView().tint(AppTheme.primary)
+                } else {
+                    ScrollView {
+                        VStack(spacing: AppTheme.Spacing.xl) {
+                            // Header: Avatar & Info
+                            VStack(spacing: AppTheme.Spacing.m) {
+                                Circle()
+                                    .fill(AppTheme.cardBackground)
+                                    .frame(width: 100, height: 100)
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(AppTheme.primary)
+                                    )
+                                    .shadow(color: AppTheme.primary.opacity(0.2), radius: 10)
+                                
+                                VStack(spacing: 4) {
+                                    Text(authStore.currentUser?.displayName ?? "User")
+                                        .font(.title2).bold()
+                                        .foregroundColor(AppTheme.textPrimary)
+                                    Text("@\(authStore.currentUser?.username ?? "username")")
+                                        .font(.subheadline)
+                                        .foregroundColor(AppTheme.textSecondary)
+                                }
                             }
-                        }
-                        
-                        // Stats Row
-                        HStack(spacing: 40) {
-                            StatItem(label: "Followers", value: "\(followersCount)")
-                            StatItem(label: "Following", value: "\(followingCount)")
-                            StatItem(label: "Balance", value: String(format: "%.2f€", walletBalance))
+                            
+                            // Stats Row
+                            HStack(spacing: 40) {
+                                StatItem(label: "Followers", value: "\(followersCount)")
+                                StatItem(label: "Following", value: "\(followingCount)")
+                                StatItem(label: "Balance", value: String(format: "%.2f€", walletBalance))
+                            }
+                            .padding()
+                            .background(AppTheme.cardBackground)
+                            .cornerRadius(AppTheme.Radius.m)
+                            
+                            // Actions section
+                            VStack(spacing: AppTheme.Spacing.m) {
+                                ProfileButton(label: "Edit Profile", icon: "pencil")
+                                ProfileButton(label: "Wallet History", icon: "list.bullet.rectangle")
+                                ProfileButton(label: "Security", icon: "lock.shield")
+                                
+                                Button(action: { authStore.logout() }) {
+                                    Label("Logout", systemImage: "arrow.right.square")
+                                        .foregroundColor(AppTheme.danger)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding()
+                                        .background(AppTheme.cardBackground)
+                                        .cornerRadius(AppTheme.Radius.m)
+                                }
+                            }
                         }
                         .padding()
-                        .background(AppTheme.cardBackground)
-                        .cornerRadius(AppTheme.Radius.m)
-                        
-                        // Actions section
-                        VStack(spacing: AppTheme.Spacing.m) {
-                            ProfileButton(label: "Edit Profile", icon: "pencil")
-                            ProfileButton(label: "Wallet History", icon: "list.bullet.rectangle")
-                            ProfileButton(label: "Security", icon: "lock.shield")
-                            
-                            Button(action: { authStore.logout() }) {
-                                Label("Logout", systemImage: "arrow.right.square")
-                                    .foregroundColor(AppTheme.danger)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
-                                    .background(AppTheme.cardBackground)
-                                    .cornerRadius(AppTheme.Radius.m)
-                            }
-                        }
                     }
-                    .padding()
                 }
             }
             .navigationTitle("Profile")
@@ -70,21 +75,28 @@ struct ProfileView: View {
     }
     
     func fetchProfileStats() {
-        // We'll simulate for now, but usually this hits a users/me.php endpoint
         Task {
             do {
-                struct ProfileData: Decodable {
-                    let followersCount: Int
-                    let followingCount: Int
-                    let walletBalance: Double
+                struct ProfileResponse: Decodable {
+                    struct Stats: Decodable {
+                        let followers_count: Int
+                        let following_count: Int
+                        let wallet_balance: Double
+                    }
+                    let stats: Stats
                 }
-                // In a real app, we'd hit the API here
-                // For now, let's just use the current balance from login if available
+                
+                let res: ProfileResponse = try await APIClient.shared.request("users/profile.php")
+                
                 DispatchQueue.main.async {
-                    self.walletBalance = 100.0 // Placeholder
-                    self.followersCount = 12
-                    self.followingCount = 45
+                    self.followersCount = res.stats.followers_count
+                    self.followingCount = res.stats.following_count
+                    self.walletBalance = res.stats.wallet_balance
+                    self.isLoading = false
                 }
+            } catch {
+                print("Failed to fetch profile: \(error)")
+                DispatchQueue.main.async { self.isLoading = false }
             }
         }
     }

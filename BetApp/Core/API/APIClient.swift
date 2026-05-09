@@ -43,14 +43,6 @@ class APIClient {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
-        // Handle API success/error structure
-        struct APIResponse<D: Decodable>: Decodable {
-            let status: String
-            let message: String?
-            let data: D?
-            let errors: [String: [String]]?
-        }
-        
         do {
             let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)
             if apiResponse.status == "success", let result = apiResponse.data {
@@ -63,4 +55,12 @@ class APIClient {
             throw APIError.decodingError
         }
     }
+}
+
+// Handle API success/error structure
+struct APIResponse<D: Decodable>: Decodable {
+    let status: String
+    let message: String?
+    let data: D?
+    let errors: [String: [String]]?
 }

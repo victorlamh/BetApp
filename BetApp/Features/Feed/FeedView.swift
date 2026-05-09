@@ -6,7 +6,7 @@ struct FeedView: View {
     
     var body: some View {
         NavigationView {
-            Z Ocean(alignment: .top) {
+            ZStack(alignment: .top) {
                 AppTheme.background.ignoresSafeArea()
                 
                 ScrollView {

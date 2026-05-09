@@ -6,6 +6,7 @@ enum APIError: Error {
     case decodingError
     case serverError(String)
     case unauthorized
+    case networkError
 }
 
 class APIClient {
@@ -29,15 +30,26 @@ class APIClient {
             request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         }
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try {
+            do {
+                return try await URLSession.shared.data(for: request)
+            } catch {
+                print("🌐 Network Error: \(error)")
+                throw APIError.networkError
+            }
+        }()
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.serverError("Invalid response")
+            throw APIError.serverError("Invalid response from server")
         }
         
         if httpResponse.statusCode == 401 {
             AuthStore.shared.logout()
             throw APIError.unauthorized
+        }
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+            throw APIError.serverError("Server Error: \(httpResponse.statusCode)")
         }
         
         let decoder = JSONDecoder()

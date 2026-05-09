@@ -5,7 +5,8 @@ Auth::requireAuth();
 
 $db = DB::getInstance();
 $userId = Auth::userId();
-file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Profile Fetch for User ID: $userId\n", FILE_APPEND);
+$user = Auth::user();
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Profile Fetch for User ID: $userId (Role: " . ($user['role'] ?? 'NONE') . ")\n", FILE_APPEND);
 
 // Get counts
 $followers = $db->fetchOne("SELECT COUNT(*) as count FROM follows WHERE followed_id = ? AND status = 'accepted'", [$userId]);

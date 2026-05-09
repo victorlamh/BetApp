@@ -12,27 +12,20 @@ struct AdminView: View {
                 if isLoading {
                     ProgressView().tint(AppTheme.primary)
                 } else if pendingBets.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "checkmark.seal")
-                            .font(.system(size: 60))
+                    VStack(spacing: AppTheme.Spacing.m) {
+                        Image(systemName: "checkmark.shield")
+                            .font(.system(size: 50))
                             .foregroundColor(AppTheme.textSecondary)
-                        Text("Inbox Zero!")
-                            .font(.headline)
-                        Text("All bets have been moderated.")
-                            .font(.subheadline)
+                        Text("No pending bets")
                             .foregroundColor(AppTheme.textSecondary)
                     }
                 } else {
                     List {
                         ForEach(pendingBets) { bet in
                             AdminBetCard(bet: bet, onAction: fetchPendingBets)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                                .listRowSeparator(.hidden)
+                                .listRowBackground(AppTheme.cardBackground)
                         }
                     }
-                    .listStyle(.plain)
-                }
             }
             .navigationTitle("Admin Panel")
             .onAppear(perform: fetchPendingBets)

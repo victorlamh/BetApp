@@ -22,6 +22,16 @@ if (!$betId || !in_array($action, ['approve', 'reject'])) {
 
 $db = DB::getInstance();
 
+// Prevent double-processing
+$currentBet = $db->fetchOne("SELECT status FROM bets WHERE id = ?", [$betId]);
+if (!$currentBet) {
+    Response::error("Bet not found", 404);
+}
+
+if ($currentBet['status'] !== 'pending_review') {
+    Response::success(['status' => 'already_processed', 'current_status' => $currentBet['status']], "Bet already processed");
+}
+
 try {
     $db->beginTransaction();
 

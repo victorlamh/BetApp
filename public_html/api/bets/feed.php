@@ -7,7 +7,7 @@ $scope = $_GET['scope'] ?? 'global'; // global, friends, mine
 $userId = Auth::userId();
 $db = DB::getInstance();
 
-$sql = "SELECT b.*, u.display_name as creator_name 
+$sql = "SELECT b.*, u.display_name as creator_name, b.creator_user_id as creator_id 
         FROM bets b 
         JOIN users u ON b.creator_user_id = u.id 
         WHERE b.status IN ('live', 'locked', 'result_proposed')";
@@ -42,7 +42,7 @@ foreach ($bets as &$bet) {
         "SELECT * FROM wagers WHERE bet_id = ? AND user_id = ?",
         [$bet['id'], $userId]
     );
-    $bet['my_wager'] = $wager;
+    $bet['my_wager'] = $wager ?: null;
 }
 
 Response::success($bets);

@@ -42,6 +42,9 @@ struct AdminView: View {
                         } else {
                             List(pendingBets) { bet in
                                 AdminBetCard(bet: bet, onAction: fetchPendingBets)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .padding(.vertical, 4)
                             }
                             .listStyle(.plain)
                         }
@@ -90,8 +93,8 @@ struct AdminBetCard: View {
     let onAction: () -> Void
     @State private var isProcessing = false
     @State private var resultText: String = ""
-    @State private var showApproveAlert = false
-    @State private var showRejectAlert = false
+    @State private var showingConfirmation = false
+    @State private var isApproveAction = true
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -111,7 +114,8 @@ struct AdminBetCard: View {
             if !isProcessing {
                 HStack(spacing: 12) {
                     Button {
-                        showApproveAlert = true
+                        isApproveAction = true
+                        showingConfirmation = true
                     } label: {
                         Label("Approve", systemImage: "checkmark.circle.fill")
                             .padding(.vertical, 8)
@@ -120,13 +124,11 @@ struct AdminBetCard: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
-                    .confirmationDialog("Approve this bet?", isPresented: $showApproveAlert, titleVisibility: .visible) {
-                        Button("Yes, Approve") { moderate(approve: true) }
-                        Button("Cancel", role: .cancel) {}
-                    }
+                    .buttonStyle(PlainButtonStyle())
                     
                     Button {
-                        showRejectAlert = true
+                        isApproveAction = false
+                        showingConfirmation = true
                     } label: {
                         Label("Reject", systemImage: "xmark.circle.fill")
                             .padding(.vertical, 8)
@@ -135,10 +137,7 @@ struct AdminBetCard: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
-                    .confirmationDialog("Reject this bet?", isPresented: $showRejectAlert, titleVisibility: .visible) {
-                        Button("Yes, Reject", role: .destructive) { moderate(approve: false) }
-                        Button("Cancel", role: .cancel) {}
-                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             } else {
                 ProgressView().tint(AppTheme.primary)
@@ -148,12 +147,27 @@ struct AdminBetCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppTheme.cardBackground)
         .cornerRadius(10)
+        .confirmationDialog(
+            isApproveAction ? "Approve this bet?" : "Reject this bet?",
+            isPresented: $showingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(isApproveAction ? "Yes, Approve" : "Yes, Reject", role: isApproveAction ? nil : .destructive) {
+                moderate(approve: isApproveAction)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
     
     func moderate(approve: Bool) {
         guard !isProcessing else { return }
         isProcessing = true
         resultText = ""
+        
+        // Haptic Feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        
         Task {
             do {
                 struct SimpleResponse: Decodable { let status: String; let betId: Int?; let action: String? }
@@ -163,12 +177,16 @@ struct AdminBetCard: View {
                     body: ["bet_id": bet.id, "action": approve ? "approve" : "reject", "notes": "Moderated via iOS"]
                 )
                 DispatchQueue.main.async {
+                    generator.notificationOccurred(.success)
                     self.resultText = approve ? "✅ Approved!" : "✅ Rejected!"
                     self.isProcessing = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { onAction() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        onAction()
+                    }
                 }
             } catch {
                 DispatchQueue.main.async {
+                    generator.notificationOccurred(.error)
                     self.resultText = "Failed: \(error)"
                     self.isProcessing = false
                 }

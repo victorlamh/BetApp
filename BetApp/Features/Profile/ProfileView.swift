@@ -17,6 +17,17 @@ struct ProfileView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: AppTheme.Spacing.xl) {
+                            // DEBUG SECTION
+                            HStack {
+                                Text("DEBUG - ID: \(authStore.currentUser?.id ?? 0)")
+                                Spacer()
+                                Text("ROLE: \(authStore.currentUser?.role ?? "NULL")")
+                            }
+                            .font(.caption.monospaced())
+                            .padding(8)
+                            .background(Color.yellow.opacity(0.2))
+                            .foregroundColor(.yellow)
+                            
                             // Header: Avatar & Info
                             VStack(spacing: AppTheme.Spacing.m) {
                                 Circle()

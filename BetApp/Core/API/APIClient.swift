@@ -13,8 +13,14 @@ class APIClient {
     static let shared = APIClient()
     private let baseURL = "https://inject.victorlamache.com/api" // Replace with actual URL
     
-    func request<T: Decodable>(_ endpoint: String, method: String = "GET", body: [String: Any]? = nil) async throws -> T {
-        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+    func request<T: Decodable>(
+        _ endpoint: String,
+        method: String = "GET",
+        body: [String: Any]? = nil
+    ) async throws -> T {
+        // Handle query parameters if present in endpoint
+        let urlString = baseURL + "/" + endpoint
+        guard let url = URL(string: urlString) else {
             throw APIError.invalidURL
         }
         

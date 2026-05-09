@@ -6,11 +6,12 @@ Auth::requireAuth();
 $status = $_GET['status'] ?? 'live';
 $db = DB::getInstance();
 
-file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Listing bets with status: $status\n", FILE_APPEND);
+$totalInDb = $db->fetchOne("SELECT COUNT(*) as count FROM bets");
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Listing bets for status: $status. Total bets in DB: " . $totalInDb['count'] . "\n", FILE_APPEND);
 
 // Simple listing for admin/moderation
 $bets = $db->fetchAll(
-    "SELECT b.*, u.username as creator_name 
+    "SELECT b.*, u.username as creator_name, b.creator_user_id as creator_id
      FROM bets b 
      JOIN users u ON b.creator_user_id = u.id 
      WHERE b.status = ?

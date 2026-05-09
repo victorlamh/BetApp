@@ -18,9 +18,10 @@ class APIClient {
         method: String = "GET",
         body: [String: Any]? = nil
     ) async throws -> T {
-        // Handle query parameters if present in endpoint
-        let urlString = baseURL + "/" + endpoint
-        guard let url = URL(string: urlString) else {
+        // Use URLComponents to safely build the URL with potential query params
+        let fullPath = baseURL + "/" + endpoint
+        guard let url = URL(string: fullPath) else {
+            print("DEBUG: Invalid URL - \(fullPath)")
             throw APIError.invalidURL
         }
         

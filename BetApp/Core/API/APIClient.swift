@@ -70,7 +70,12 @@ class APIClient {
                 throw APIError.serverError(apiResponse.message ?? "Unknown error")
             }
         } catch {
-            print("Decoding Error: \(error)")
+            let errorDescription = "\(error)"
+            print("Decoding Error: \(errorDescription)")
+            // Provide a more descriptive error for the UI
+            if let decodingError = error as? DecodingError {
+                throw APIError.serverError("Decoding Fail: \(decodingError)")
+            }
             throw APIError.decodingError
         }
     }

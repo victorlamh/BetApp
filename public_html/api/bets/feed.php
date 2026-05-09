@@ -34,19 +34,41 @@ file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] 
 $bets = $db->fetchAll($sql, $params);
 file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] feed.php FOUND: " . count($bets) . " bets\n", FILE_APPEND);
 
-// For each bet, fetch outcomes
+// For each bet, fetch outcomes and cast types
 foreach ($bets as &$bet) {
+    $bet['id'] = (int)$bet['id'];
+    $bet['creator_id'] = (int)$bet['creator_id'];
+    $bet['creator_user_id'] = (int)$bet['creator_user_id'];
+    $bet['is_boosted'] = (int)$bet['is_boosted'];
+    $bet['proof_required'] = (int)$bet['proof_required'];
+    
     $bet['outcomes'] = $db->fetchAll(
         "SELECT id, label, coefficient FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order",
         [$bet['id']]
     );
+    
+    foreach ($bet['outcomes'] as &$outcome) {
+        $outcome['id'] = (int)$outcome['id'];
+        $outcome['coefficient'] = (float)$outcome['coefficient'];
+    }
     
     // Check if user has a wager
     $wager = $db->fetchOne(
         "SELECT * FROM wagers WHERE bet_id = ? AND user_id = ?",
         [$bet['id'], $userId]
     );
-    $bet['my_wager'] = $wager ?: null;
+    
+    if ($wager) {
+        $wager['id'] = (int)$wager['id'];
+        $wager['bet_id'] = (int)$wager['bet_id'];
+        $wager['outcome_id'] = (int)$wager['outcome_id'];
+        $wager['stake'] = (float)$wager['stake'];
+        $wager['locked_coefficient'] = (float)$wager['locked_coefficient'];
+        $wager['potential_return'] = (float)$wager['potential_return'];
+        $bet['my_wager'] = $wager;
+    } else {
+        $bet['my_wager'] = null;
+    }
 }
 
 Response::success($bets);

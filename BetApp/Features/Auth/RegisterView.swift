@@ -105,10 +105,20 @@ class RegisterViewModel: ObservableObject {
                 AuthStore.shared.login(token: response.token, user: response.user)
                 self.isLoading = false
             }
+        } catch let error as APIError {
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch error {
+                case .serverError(let message):
+                    self.errorMessage = message
+                default:
+                    self.errorMessage = "Network error. Please try again."
+                }
+            }
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Registration failed. Try a different username."
+                self.errorMessage = "An unexpected error occurred."
             }
         }
     }

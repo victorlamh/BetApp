@@ -109,10 +109,20 @@ class LoginViewModel: ObservableObject {
                 AuthStore.shared.login(token: response.token, user: response.user)
                 self.isLoading = false
             }
+        } catch let error as APIError {
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch error {
+                case .serverError(let message):
+                    self.errorMessage = message
+                default:
+                    self.errorMessage = "Invalid login. Please check your credentials."
+                }
+            }
         } catch {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.errorMessage = "Invalid username or password"
+                self.errorMessage = "An unexpected error occurred."
             }
         }
     }

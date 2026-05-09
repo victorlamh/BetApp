@@ -36,6 +36,7 @@ class AuthStore: ObservableObject {
                 print("Session restoration failed: \(error)")
                 DispatchQueue.main.async { self.logout() }
             }
+        }
     }
 
     func login(token: String, user: User) {

@@ -25,6 +25,7 @@ Response::success([
         'id' => $userId,
         'username' => Auth::user()['username'],
         'display_name' => Auth::user()['display_name'],
+        'role' => Auth::user()['role'],
         'avatar_url' => Auth::user()['avatar_url']
     ],
     'stats' => [

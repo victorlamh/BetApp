@@ -6,6 +6,8 @@ Auth::requireAuth();
 $status = $_GET['status'] ?? 'live';
 $db = DB::getInstance();
 
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Listing bets with status: $status\n", FILE_APPEND);
+
 // Simple listing for admin/moderation
 $bets = $db->fetchAll(
     "SELECT b.*, u.username as creator_name 
@@ -15,6 +17,8 @@ $bets = $db->fetchAll(
      ORDER BY b.created_at DESC",
     [$status]
 );
+
+file_put_contents(__DIR__ . '/../debug_log.txt', "FOUND " . count($bets) . " bets for status $status\n", FILE_APPEND);
 
 // Format numeric IDs
 foreach ($bets as &$bet) {

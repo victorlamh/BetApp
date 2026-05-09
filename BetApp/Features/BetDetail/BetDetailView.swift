@@ -90,7 +90,7 @@ struct BetDetailView: View {
                 .font(.headline)
                 .foregroundColor(AppTheme.textPrimary)
             
-            ForEach(bet.outcomes) { outcome in
+            ForEach(bet.outcomes ?? []) { outcome in
                 Button(action: {
                     if bet.status == "live" && bet.myWager == nil {
                         selectedOutcome = outcome
@@ -171,7 +171,7 @@ struct BetDetailView: View {
     
     private var wagerButton: some View {
         Button(action: {
-            if let first = viewModel.bet?.outcomes.first {
+            if let first = viewModel.bet?.outcomes?.first {
                 selectedOutcome = first
                 showingWagerSlip = true
             }

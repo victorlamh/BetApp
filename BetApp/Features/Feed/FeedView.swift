@@ -144,7 +144,7 @@ struct BetCard: View {
                 .lineLimit(2)
             
             HStack {
-                ForEach(bet.outcomes.prefix(2)) { outcome in
+                ForEach(bet.outcomes?.prefix(2) ?? []) { outcome in
                     HStack {
                         Text(outcome.label)
                         Spacer()

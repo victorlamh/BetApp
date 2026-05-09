@@ -32,23 +32,34 @@ struct AdminView: View {
                         fetchPendingBets()
                     }
                 }
-            }
             .navigationTitle("Moderation")
-            .onAppear(perform: fetchPendingBets)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { fetchPendingBets() }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+            }
+            .onAppear {
+                print("DEBUG: AdminView appeared")
+                fetchPendingBets()
+            }
         }
     }
     
     func fetchPendingBets() {
+        print("DEBUG: Starting fetchPendingBets...")
         isLoading = true
         Task {
             do {
                 let bets: [Bet] = try await APIClient.shared.request("bets/list.php?status=pending_review")
+                print("DEBUG: Received \(bets.count) bets from server")
                 DispatchQueue.main.async {
                     self.pendingBets = bets
                     self.isLoading = false
                 }
             } catch {
-                print("Failed to fetch pending bets: \(error)")
+                print("DEBUG: Fetch Failed: \(error)")
                 DispatchQueue.main.async { self.isLoading = false }
             }
         }

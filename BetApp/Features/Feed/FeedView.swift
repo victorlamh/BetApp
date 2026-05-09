@@ -14,10 +14,25 @@ struct FeedView: View {
                         // Wallet Header
                         walletHeader
                         
+                        if let error = viewModel.errorMessage {
+                            VStack {
+                                Text("Feed Error").font(.headline)
+                                Text(error).font(.caption).multilineTextAlignment(.center)
+                                Button("Retry") { Task { await viewModel.fetchFeed() } }
+                                    .padding(.top, 4)
+                            }
+                            .foregroundColor(.red)
+                            .padding()
+                        }
+                        
                         // Bets List
                         if viewModel.isLoading && viewModel.bets.isEmpty {
                             ProgressView()
                                 .tint(AppTheme.primary)
+                                .padding()
+                        } else if viewModel.bets.isEmpty && viewModel.errorMessage == nil {
+                            Text("No live bets found")
+                                .foregroundColor(AppTheme.textSecondary)
                                 .padding()
                         } else {
                             ForEach(viewModel.bets) { bet in
@@ -82,11 +97,15 @@ class FeedViewModel: ObservableObject {
     @Published var bets: [Bet] = []
     @Published var balance: Double = 0.0
     @Published var isLoading = false
+    @Published var errorMessage: String? = nil
     
     private var timer: Timer?
     
     func fetchFeed() async {
-        DispatchQueue.main.async { self.isLoading = true }
+        DispatchQueue.main.async { 
+            self.isLoading = true 
+            self.errorMessage = nil
+        }
         do {
             let fetchedBets: [Bet] = try await APIClient.shared.request("bets/feed.php")
             // Also fetch wallet
@@ -100,7 +119,10 @@ class FeedViewModel: ObservableObject {
             }
         } catch {
             print("Feed error: \(error)")
-            DispatchQueue.main.async { self.isLoading = false }
+            DispatchQueue.main.async { 
+                self.isLoading = false 
+                self.errorMessage = "\(error)"
+            }
         }
     }
     

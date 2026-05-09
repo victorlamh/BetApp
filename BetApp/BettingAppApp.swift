@@ -30,12 +30,10 @@ struct MainTabView: View {
                     Label("Explore", systemImage: "magnifyingglass")
                 }
             
-            if authStore.currentUser?.role == "admin" {
-                AdminView()
-                    .tabItem {
-                        Label("Admin", systemImage: "shield.fill")
-                    }
-            }
+            AdminView()
+                .tabItem {
+                    Label("Admin", systemImage: "shield.fill")
+                }
             
             NotificationsView()
                 .tabItem {

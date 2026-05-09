@@ -7,17 +7,18 @@ if (!in_array(Auth::user()['role'], ['admin', 'moderator'])) {
     Response::forbidden();
 }
 
-// bootstrap.php merges JSON body into $_POST, so $_POST works for both
-$data = $_POST;
+// Read from merged POST (bootstrap already parsed JSON body into $_POST)
+$betId  = (int)($_POST['bet_id'] ?? 0);
+$action = $_POST['action'] ?? '';
+$notes  = Security::sanitize($_POST['notes'] ?? 'Moderated via App');
 
-Validator::validate($data, [
-    'bet_id'  => 'required',
-    'action'  => 'required', // 'approve' or 'reject'
-]);
+// Log for debugging
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] review.php - betId=$betId action=$action POST=" . json_encode($_POST) . "\n", FILE_APPEND);
 
-$betId  = (int)$data['bet_id'];
-$action = $data['action'];
-$notes  = Security::sanitize($data['notes'] ?? 'Moderated via App');
+if (!$betId || !in_array($action, ['approve', 'reject'])) {
+    Response::error("Missing or invalid bet_id or action. Got: betId=$betId, action=$action", 400);
+}
+
 
 $db = DB::getInstance();
 

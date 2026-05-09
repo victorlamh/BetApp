@@ -79,9 +79,9 @@ struct ProfileView: View {
             do {
                 struct ProfileResponse: Decodable {
                     struct Stats: Decodable {
-                        let followers_count: Int
-                        let following_count: Int
-                        let wallet_balance: Double
+                        let followersCount: Int
+                        let followingCount: Int
+                        let walletBalance: Double
                     }
                     let stats: Stats
                 }
@@ -89,9 +89,9 @@ struct ProfileView: View {
                 let res: ProfileResponse = try await APIClient.shared.request("users/profile.php")
                 
                 DispatchQueue.main.async {
-                    self.followersCount = res.stats.followers_count
-                    self.followingCount = res.stats.following_count
-                    self.walletBalance = res.stats.wallet_balance
+                    self.followersCount = res.stats.followersCount
+                    self.followingCount = res.stats.followingCount
+                    self.walletBalance = res.stats.walletBalance
                     self.isLoading = false
                 }
             } catch {

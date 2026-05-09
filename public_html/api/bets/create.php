@@ -3,21 +3,19 @@ require_once __DIR__ . '/../bootstrap.php';
 
 Auth::requireAuth();
 
-// Use a more flexible validation for outcomes
-$errors = [];
-if (empty($_POST['title'])) $errors[] = "Title is required";
-if (empty($_POST['close_at'])) $errors[] = "Closing date is required";
-if (empty($_POST['outcomes'])) $errors[] = "Outcomes are required";
+// DEBUG: Log everything to see what's happening
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Create Bet Attempt. Data: " . file_get_contents('php://input') . "\n", FILE_APPEND);
 
-if (!empty($errors)) {
-    file_put_contents(__DIR__ . '/../debug_log.txt', "VALIDATION FAILED: " . json_encode($errors) . " Received: " . json_encode($_POST) . "\n", FILE_APPEND);
-    Response::error("Validation failed: " . implode(", ", $errors), 400);
-}
+// Manual data capture to be 100% sure
+$json = json_decode(file_get_contents('php://input'), true);
+$data = !empty($json) ? $json : $_POST;
 
-// Safety Scan
-$scanResult = Moderation::scan($_POST['title'] . ' ' . ($_POST['description'] ?? ''));
-if (!$scanResult['safe'] && $scanResult['severity'] === 'reject') {
-    Response::error("Content contains blocked terms: " . $scanResult['term'], 422);
+$title = $data['title'] ?? '';
+$closeAt = $data['close_at'] ?? '';
+$outcomes = $data['outcomes'] ?? [];
+
+if (empty($title) || empty($closeAt) || empty($outcomes)) {
+    Response::error("Missing fields. Title, Close Date, and Outcomes are all required.", 400);
 }
 
 $db = DB::getInstance();
@@ -31,20 +29,16 @@ try {
          VALUES (?, ?, ?, ?, ?, ?, ?, 'pending_review')",
         [
             $userId,
-            Security::sanitize($_POST['title']),
-            Security::sanitize($_POST['description'] ?? ''),
-            Security::sanitize($_POST['category'] ?? 'General'),
-            $_POST['visibility'] ?? 'friends',
-            $_POST['close_at'],
-            isset($_POST['proof_required']) ? (int)$_POST['proof_required'] : 1
+            Security::sanitize($title),
+            Security::sanitize($data['description'] ?? ''),
+            Security::sanitize($data['category'] ?? 'General'),
+            $data['visibility'] ?? 'friends',
+            $closeAt,
+            isset($data['proof_required']) ? (int)$data['proof_required'] : 1
         ]
     );
+    file_put_contents(__DIR__ . '/../debug_log.txt', "BET INSERTED. ID: " . $db->lastInsertId() . "\n", FILE_APPEND);
     $betId = $db->lastInsertId();
-
-    $outcomes = is_array($_POST['outcomes']) ? $_POST['outcomes'] : json_decode($_POST['outcomes'], true);
-    if (count($outcomes) < 2) {
-        throw new Exception("Minimum 2 outcomes required");
-    }
 
     foreach ($outcomes as $index => $outcome) {
         $db->query(
@@ -63,7 +57,7 @@ try {
     $db->query(
         "INSERT INTO notifications (user_id, type, message, related_id) 
          SELECT id, 'bet_pending', ?, ? FROM users WHERE role = 'admin'",
-        ["New bet pending review: " . Security::sanitize($_POST['title']), $betId]
+        ["New bet pending review: " . Security::sanitize($title), $betId]
     );
 
     $db->commit();
@@ -71,5 +65,6 @@ try {
 
 } catch (Exception $e) {
     $db->rollBack();
+    file_put_contents(__DIR__ . '/../debug_log.txt', "SQL ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
     Response::error("Failed to create bet: " . $e->getMessage());
 }

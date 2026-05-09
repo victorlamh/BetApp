@@ -189,8 +189,8 @@ struct CreateBetView: View {
         
         Task {
             do {
-                struct CreateResponse: Decodable { let status: String; let message: String? }
-                let response: CreateResponse = try await APIClient.shared.request(
+                struct CreateResponse: Decodable { let betId: Int }
+                let _: CreateResponse = try await APIClient.shared.request(
                     "bets/create.php",
                     method: "POST",
                     body: body

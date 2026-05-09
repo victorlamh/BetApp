@@ -90,8 +90,8 @@ struct AdminBetCard: View {
     let onAction: () -> Void
     @State private var isProcessing = false
     @State private var resultText: String = ""
-    @State private var showingAlert = false
-    @State private var pendingAction: Bool = true // true = approve, false = reject
+    @State private var showApproveAlert = false
+    @State private var showRejectAlert = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -111,8 +111,7 @@ struct AdminBetCard: View {
             if !isProcessing {
                 HStack(spacing: 12) {
                     Button {
-                        pendingAction = true
-                        showingAlert = true
+                        showApproveAlert = true
                     } label: {
                         Label("Approve", systemImage: "checkmark.circle.fill")
                             .padding(.vertical, 8)
@@ -121,10 +120,13 @@ struct AdminBetCard: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
+                    .confirmationDialog("Approve this bet?", isPresented: $showApproveAlert, titleVisibility: .visible) {
+                        Button("Yes, Approve") { moderate(approve: true) }
+                        Button("Cancel", role: .cancel) {}
+                    }
                     
                     Button {
-                        pendingAction = false
-                        showingAlert = true
+                        showRejectAlert = true
                     } label: {
                         Label("Reject", systemImage: "xmark.circle.fill")
                             .padding(.vertical, 8)
@@ -132,6 +134,10 @@ struct AdminBetCard: View {
                             .background(Color.red)
                             .foregroundColor(.white)
                             .cornerRadius(8)
+                    }
+                    .confirmationDialog("Reject this bet?", isPresented: $showRejectAlert, titleVisibility: .visible) {
+                        Button("Yes, Reject", role: .destructive) { moderate(approve: false) }
+                        Button("Cancel", role: .cancel) {}
                     }
                 }
             } else {
@@ -142,16 +148,6 @@ struct AdminBetCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppTheme.cardBackground)
         .cornerRadius(10)
-        .confirmationDialog(
-            pendingAction ? "Approve this bet?" : "Reject this bet?",
-            isPresented: $showingAlert,
-            titleVisibility: .visible
-        ) {
-            Button(pendingAction ? "Approve" : "Reject", role: pendingAction ? nil : .destructive) {
-                moderate(approve: pendingAction)
-            }
-            Button("Cancel", role: .cancel) {}
-        }
     }
     
     func moderate(approve: Bool) {
@@ -169,9 +165,7 @@ struct AdminBetCard: View {
                 DispatchQueue.main.async {
                     self.resultText = approve ? "✅ Approved!" : "✅ Rejected!"
                     self.isProcessing = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        onAction()
-                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { onAction() }
                 }
             } catch {
                 DispatchQueue.main.async {

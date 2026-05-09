@@ -9,7 +9,7 @@ Validator::validate($_POST, [
 
 $username = Security::sanitize($_POST['username']);
 $displayName = Security::sanitize($_POST['display_name']);
-$email = Security::sanitize($_POST['email'] ?? null);
+$email = !empty($_POST['email']) ? Security::sanitize($_POST['email']) : null;
 $passwordHash = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
 $db = DB::getInstance();

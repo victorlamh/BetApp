@@ -19,6 +19,7 @@ class Security {
     }
 
     public static function sanitize($data) {
+        if ($data === null) return null;
         if (is_array($data)) {
             foreach ($data as $key => $value) {
                 $data[$key] = self::sanitize($value);

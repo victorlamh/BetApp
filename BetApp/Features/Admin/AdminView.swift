@@ -20,14 +20,20 @@ struct AdminView: View {
                             .foregroundColor(AppTheme.textSecondary)
                     }
                 } else {
-                    List {
-                        ForEach(pendingBets) { bet in
-                            AdminBetCard(bet: bet, onAction: fetchPendingBets)
-                                .listRowBackground(AppTheme.cardBackground)
+                    ScrollView {
+                        VStack(spacing: AppTheme.Spacing.m) {
+                            ForEach(pendingBets) { bet in
+                                AdminBetCard(bet: bet, onAction: fetchPendingBets)
+                            }
                         }
+                        .padding()
                     }
+                    .refreshable {
+                        fetchPendingBets()
+                    }
+                }
             }
-            .navigationTitle("Admin Panel")
+            .navigationTitle("Moderation")
             .onAppear(perform: fetchPendingBets)
         }
     }
@@ -42,6 +48,7 @@ struct AdminView: View {
                     self.isLoading = false
                 }
             } catch {
+                print("Failed to fetch pending bets: \(error)")
                 DispatchQueue.main.async { self.isLoading = false }
             }
         }
@@ -100,7 +107,6 @@ struct AdminBetCard: View {
     }
     
     func moderate(approve: Bool) {
-        // We'll create an admin moderation endpoint for this
         Task {
             do {
                 struct SimpleResponse: Decodable { let status: String }

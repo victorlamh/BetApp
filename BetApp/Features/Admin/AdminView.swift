@@ -87,16 +87,28 @@ struct AdminView: View {
 struct AdminBetCard: View {
     let bet: Bet
     let onAction: () -> Void
+    @State private var actionResult: String = ""
+    @State private var isProcessing = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(bet.title).font(.headline).foregroundColor(AppTheme.textPrimary)
             Text("By: \(bet.creatorName)").font(.caption).foregroundColor(AppTheme.textSecondary)
+            
+            if !actionResult.isEmpty {
+                Text(actionResult)
+                    .font(.caption.monospaced())
+                    .foregroundColor(actionResult.contains("✅") ? .green : .red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
             HStack {
-                Button("Approve") { moderate(approve: true) }
+                Button(isProcessing ? "..." : "✅ Approve") { moderate(approve: true) }
                     .padding(8).background(Color.green).foregroundColor(.white).cornerRadius(5)
-                Button("Reject") { moderate(approve: false) }
+                    .disabled(isProcessing)
+                Button(isProcessing ? "..." : "❌ Reject") { moderate(approve: false) }
                     .padding(8).background(Color.red).foregroundColor(.white).cornerRadius(5)
+                    .disabled(isProcessing)
             }
         }
         .padding()
@@ -106,6 +118,8 @@ struct AdminBetCard: View {
     }
     
     func moderate(approve: Bool) {
+        isProcessing = true
+        actionResult = "Sending..."
         Task {
             do {
                 struct SimpleResponse: Decodable { let status: String }
@@ -114,9 +128,16 @@ struct AdminBetCard: View {
                     method: "POST",
                     body: ["bet_id": bet.id, "action": approve ? "approve" : "reject", "notes": "Moderated via iOS"]
                 )
-                DispatchQueue.main.async { onAction() }
+                DispatchQueue.main.async {
+                    self.actionResult = approve ? "✅ Approved!" : "✅ Rejected!"
+                    self.isProcessing = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { onAction() }
+                }
             } catch {
-                print("Moderation failed: \(error)")
+                DispatchQueue.main.async {
+                    self.actionResult = "FAIL: \(error)"
+                    self.isProcessing = false
+                }
             }
         }
     }

@@ -7,14 +7,17 @@ if (!in_array(Auth::user()['role'], ['admin', 'moderator'])) {
     Response::forbidden();
 }
 
-Validator::validate($_POST, [
-    'bet_id' => 'required',
-    'action' => 'required', // 'approve' or 'reject'
+// bootstrap.php merges JSON body into $_POST, so $_POST works for both
+$data = $_POST;
+
+Validator::validate($data, [
+    'bet_id'  => 'required',
+    'action'  => 'required', // 'approve' or 'reject'
 ]);
 
-$betId = (int)$_POST['bet_id'];
-$action = $_POST['action'];
-$notes = Security::sanitize($_POST['notes'] ?? 'Moderated via App');
+$betId  = (int)$data['bet_id'];
+$action = $data['action'];
+$notes  = Security::sanitize($data['notes'] ?? 'Moderated via App');
 
 $db = DB::getInstance();
 

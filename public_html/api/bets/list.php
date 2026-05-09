@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../bootstrap.php';
 
+// PRE-AUTH LOG: Did the request even arrive?
+$headers = getallheaders();
+$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? 'MISSING';
+file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] list.php HIT. Status param: " . ($_GET['status'] ?? 'none') . ". Auth header: " . substr($authHeader, 0, 30) . "...\n", FILE_APPEND);
+
 Auth::requireAuth();
 
 $status = $_GET['status'] ?? 'live';

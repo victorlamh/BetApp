@@ -66,6 +66,8 @@ struct NotificationRow: View {
     
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var wasAccepted = false
+    @State private var isFollowingNow = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -96,6 +98,27 @@ struct NotificationRow: View {
                 HStack(spacing: 12) {
                     if isProcessing {
                         ProgressView().tint(AppTheme.primary)
+                    } else if wasAccepted {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            Text("Accepted").font(.caption).foregroundColor(.green)
+                        }
+                        
+                        if notification.isFollowingBack == false && !isFollowingNow {
+                            Button(action: { followBack(userId: requesterId) }) {
+                                Text("Follow Back")
+                                    .font(.caption).bold()
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(AppTheme.cardBackground)
+                                    .foregroundColor(AppTheme.primary)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(AppTheme.primary.opacity(0.5), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
                     } else {
                         Button(action: { handleRequest(accept: true, requesterId: requesterId) }) {
                             Text("Accept")
@@ -122,7 +145,7 @@ struct NotificationRow: View {
                         }
                         .buttonStyle(BorderlessButtonStyle())
                         
-                        if notification.isFollowingBack == false {
+                        if notification.isFollowingBack == false && !isFollowingNow {
                             Button(action: { followBack(userId: requesterId) }) {
                                 Text("Follow Back")
                                     .font(.caption).bold()
@@ -164,6 +187,7 @@ struct NotificationRow: View {
                 )
                 DispatchQueue.main.async {
                     isProcessing = false
+                    isFollowingNow = true
                     // No need to remove local here, but maybe refresh?
                     onAction()
                 }
@@ -181,8 +205,11 @@ struct NotificationRow: View {
     func handleRequest(accept: Bool, requesterId: Int) {
         isProcessing = true
         
-        // Optimistic UI update
-        onRemoveLocal()
+        // Optimistic UI update: only remove locally if REFUSING.
+        // If ACCEPTING, we keep it so the user can see the "Follow Back" button if needed.
+        if !accept {
+            onRemoveLocal()
+        }
         
         Task {
             do {
@@ -198,6 +225,9 @@ struct NotificationRow: View {
                 
                 DispatchQueue.main.async {
                     isProcessing = false
+                    if accept {
+                        self.wasAccepted = true
+                    }
                     onAction() // Refresh list from server to sync
                 }
             } catch {

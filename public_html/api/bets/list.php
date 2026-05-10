@@ -8,21 +8,28 @@ file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] 
 
 Auth::requireAuth();
 
-$status = $_GET['status'] ?? 'live';
+$statusParam = $_GET['status'] ?? 'live';
+$statuses = explode(',', $statusParam);
+$placeholders = implode(',', array_fill(0, count($statuses), '?'));
+
 $db = DB::getInstance();
 
-$totalInDb = $db->fetchOne("SELECT COUNT(*) as count FROM bets");
-file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Listing bets for status: $status. Total bets in DB: " . $totalInDb['count'] . "\n", FILE_APPEND);
-
-// Simple listing for admin/moderation
-$bets = $db->fetchAll(
-    "SELECT b.*, u.username as creator_name, b.creator_user_id as creator_id
+$sql = "SELECT b.*, u.username as creator_name, b.creator_user_id as creator_id
      FROM bets b 
      JOIN users u ON b.creator_user_id = u.id 
-     WHERE b.status = ?
-     ORDER BY b.created_at DESC",
-    [$status]
-);
+     WHERE b.status IN ($placeholders)";
+
+// Special logic for "To Settle" tab in Admin
+// If statuses include 'live', we usually only want EXPIRED live bets for the settle tab
+// But we want to maintain backward compatibility for normal feed.
+// So let's check if 'locked' is also in the list (which indicates Admin "To Settle" tab)
+if (in_array('locked', $statuses) && in_array('live', $statuses)) {
+    $sql .= " AND (b.status != 'live' OR b.close_at < NOW())";
+}
+
+$sql .= " ORDER BY b.created_at DESC";
+
+$bets = $db->fetchAll($sql, $statuses);
 
 file_put_contents(__DIR__ . '/../debug_log.txt', "FOUND " . count($bets) . " bets for status $status\n", FILE_APPEND);
 

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BetApp - Web</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PWA meta tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth View -->
+        <div id="view-login" class="view auth-container">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-ticket-alt" style="font-size: 64px; color: var(--primary);"></i>
+                <h1 style="margin-top: 10px;">BetApp</h1>
+                <p class="text-small">Enter the arena</p>
+            </div>
+            <div class="input-group">
+                <input type="email" id="login-email" placeholder="Email address">
+                <input type="password" id="login-pass" placeholder="Password">
+            </div>
+            <button id="btn-login" class="btn-primary">LOGIN</button>
+            <p style="text-align: center; font-size: 14px;">
+                Don't have an account? <span style="color: var(--primary); cursor: pointer;" onclick="app.showView('signup')">Sign up</span>
+            </p>
+        </div>
+
+        <!-- Signup View -->
+        <div id="view-signup" class="view auth-container">
+            <h1 class="title-large" style="padding-left: 0;">Create Account</h1>
+            <div class="input-group">
+                <input type="text" id="signup-name" placeholder="Full Name">
+                <input type="email" id="signup-email" placeholder="Email address">
+                <input type="password" id="signup-pass" placeholder="Password">
+            </div>
+            <button id="btn-signup" class="btn-primary">SIGN UP</button>
+            <p style="text-align: center; font-size: 14px;">
+                Already have an account? <span style="color: var(--primary); cursor: pointer;" onclick="app.showView('login')">Login</span>
+            </p>
+        </div>
+
+        <!-- Feed View -->
+        <div id="view-feed" class="view">
+            <div class="card" style="margin-top: 20px; display: flex; align-items: center; gap: 15px;">
+                <div style="background: rgba(255,204,0,0.1); padding: 10px; border-radius: 50%;">
+                    <i class="fas fa-wallet" style="color: var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="text-small" style="font-weight: 900;">AVAILABLE BALANCE</div>
+                    <div id="user-balance" class="title-medium">0.00€</div>
+                </div>
+                <div style="margin-left: auto; color: var(--primary);" onclick="app.fetchFeed()">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+            </div>
+            <h2 class="title-large">Live Bets</h2>
+            <div id="bets-list">
+                <!-- Bet cards will be injected here -->
+            </div>
+        </div>
+
+        <!-- My Bets View -->
+        <div id="view-mybets" class="view">
+            <h2 class="title-large">My Wagers</h2>
+            <div id="my-bets-list">
+                <!-- Wager cards will be injected here -->
+            </div>
+        </div>
+
+        <!-- Notifications View -->
+        <div id="view-notifications" class="view">
+            <h2 class="title-large">Activity</h2>
+            <div id="notifications-list">
+                <!-- Notifications will be injected here -->
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="view-profile" class="view">
+            <div style="text-align: center; padding: 40px 20px;">
+                <div id="profile-avatar" style="width: 100px; height: 100px; background: var(--secondary); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--primary);">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 id="profile-name" style="margin-top: 15px;">User Name</h2>
+                <p id="profile-email" class="text-small">user@example.com</p>
+            </div>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="nav-row" onclick="app.showView('mybets')" style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-ticket-alt" style="margin-right: 10px; color: var(--primary);"></i> My Bets</span>
+                    <i class="fas fa-chevron-right" style="font-size: 12px; opacity: 0.5;"></i>
+                </div>
+                <div class="nav-row" onclick="app.logout()" style="padding: 16px; color: var(--danger); display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i> Logout</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bet Detail View (Modal or separate view) -->
+        <div id="view-bet-detail" class="view">
+            <div style="padding: 20px; display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-arrow-left" onclick="app.showView('feed')"></i>
+                <h3 id="detail-title">Bet Detail</h3>
+            </div>
+            <div id="detail-content" class="animate-fade"></div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav id="main-nav" class="bottom-nav" style="display: none;">
+            <a href="#" class="nav-item active" onclick="app.showView('feed')">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" onclick="app.showView('feed')">
+                <i class="fas fa-magnifying-glass"></i>
+                <span>Explore</span>
+            </a>
+            <a href="#" class="nav-item" onclick="app.showView('mybets')">
+                <i class="fas fa-ticket"></i>
+                <span>My Bets</span>
+            </a>
+            <a href="#" class="nav-item" onclick="app.showView('notifications')">
+                <i class="fas fa-bell"></i>
+                <span>Activity</span>
+            </a>
+            <a href="#" class="nav-item" onclick="app.showView('profile')">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

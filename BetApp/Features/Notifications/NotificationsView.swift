@@ -20,10 +20,16 @@ struct NotificationsView: View {
                             .foregroundColor(AppTheme.textSecondary)
                     }
                 } else {
-                    List(notifications) { notification in
-                        NotificationRow(notification: notification, onAction: fetchNotifications)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                    List {
+                        ForEach(notifications.filter { !$0.isRead || $0.type != "follow_request" }) { notification in
+                            NotificationRow(notification: notification, onAction: fetchNotifications, onRemoveLocal: {
+                                withAnimation {
+                                    notifications.removeAll { $0.id == notification.id }
+                                }
+                            })
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
                     }
                     .listStyle(.plain)
                     .refreshable {
@@ -55,6 +61,7 @@ struct NotificationsView: View {
 struct NotificationRow: View {
     let notification: AppNotification
     let onAction: () -> Void
+    let onRemoveLocal: () -> Void
     @State private var isProcessing = false
     
     @State private var showAlert = false
@@ -131,6 +138,10 @@ struct NotificationRow: View {
     
     func handleRequest(accept: Bool, requesterId: Int) {
         isProcessing = true
+        
+        // Optimistic UI update
+        onRemoveLocal()
+        
         Task {
             do {
                 struct EmptyResponse: Decodable {}
@@ -145,7 +156,7 @@ struct NotificationRow: View {
                 
                 DispatchQueue.main.async {
                     isProcessing = false
-                    onAction()
+                    onAction() // Refresh list from server to sync
                 }
             } catch {
                 print("Failed to handle follow request: \(error)")
@@ -153,6 +164,7 @@ struct NotificationRow: View {
                     self.alertMessage = error.localizedDescription
                     self.showAlert = true
                     self.isProcessing = false
+                    onAction() // Refresh anyway
                 }
             }
         }

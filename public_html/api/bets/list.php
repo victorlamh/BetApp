@@ -33,7 +33,7 @@ foreach ($bets as &$bet) {
     
     // Fetch outcomes
     $bet['outcomes'] = $db->fetchAll(
-        "SELECT id, label, coefficient FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order ASC",
+        "SELECT id, label, initial_coefficient as coefficient FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order ASC",
         [$bet['id']]
     );
     

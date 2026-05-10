@@ -1,12 +1,23 @@
 import Foundation
 
-enum APIError: Error {
+enum APIError: Error, LocalizedError {
     case invalidURL
     case noData
     case decodingError
     case serverError(String)
     case unauthorized
     case networkError
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:          return "Invalid URL constructed"
+        case .noData:              return "No data received from server"
+        case .decodingError:       return "Failed to decode server response"
+        case .serverError(let m):  return m
+        case .unauthorized:        return "Unauthorized - please log in again"
+        case .networkError:        return "Network error - check your connection"
+        }
+    }
 }
 
 class APIClient {
@@ -18,9 +29,19 @@ class APIClient {
         method: String = "GET",
         body: [String: Any]? = nil
     ) async throws -> T {
-        // Use URLComponents to safely build the URL with potential query params
+        // Use URLComponents for safe URL construction
         let fullPath = baseURL + "/" + endpoint
-        guard let url = URL(string: fullPath) else {
+        
+        // Try direct URL first (handles cases where endpoint already has query params)
+        guard let url = URL(string: fullPath) ?? {
+            // Fallback: split on ? and use URLComponents
+            let parts = fullPath.components(separatedBy: "?")
+            var components = URLComponents(string: parts[0])
+            if parts.count > 1 {
+                components?.percentEncodedQuery = parts[1]
+            }
+            return components?.url
+        }() else {
             print("DEBUG: Invalid URL - \(fullPath)")
             throw APIError.invalidURL
         }
@@ -66,13 +87,16 @@ class APIClient {
             let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)
             if apiResponse.status == "success", let result = apiResponse.data {
                 return result
-            } else {
-                throw APIError.serverError(apiResponse.message ?? "Unknown error")
             }
+            // Throw server error OUTSIDE the decode try block to avoid it being re-caught
+            let msg = apiResponse.message ?? "Unknown server error"
+            throw APIError.serverError(msg)
+        } catch let apiErr as APIError {
+            // Re-throw our own errors directly (don't wrap them)
+            throw apiErr
         } catch {
             let errorDescription = "\(error)"
             print("Decoding Error: \(errorDescription)")
-            // Provide a more descriptive error for the UI
             if let decodingError = error as? DecodingError {
                 throw APIError.serverError("Decoding Fail: \(decodingError)")
             }

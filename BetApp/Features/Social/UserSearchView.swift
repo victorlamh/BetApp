@@ -71,8 +71,11 @@ struct UserSearchView: View {
         searchError = nil
         Task {
             do {
-                let encodedQuery = searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? searchText
-                let foundUsers: [SearchUser] = try await APIClient.shared.request("users/search.php?q=\(encodedQuery)")
+                // Build URL safely using URLComponents
+                var components = URLComponents(string: "users/search.php")!
+                components.queryItems = [URLQueryItem(name: "q", value: searchText)]
+                let endpoint = components.string ?? "users/search.php?q=\(searchText)"
+                let foundUsers: [SearchUser] = try await APIClient.shared.request(endpoint)
                 DispatchQueue.main.async {
                     self.users = foundUsers
                     self.isLoading = false

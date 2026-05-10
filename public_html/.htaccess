@@ -8,6 +8,11 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Disable directory listing
 Options -Indexes
 
+# PHP Upload Limits
+php_value upload_max_filesize 32M
+php_value post_max_size 32M
+php_value memory_limit 128M
+
 # Set JSON as default content type if not specified
 Header set Content-Type "application/json"
 

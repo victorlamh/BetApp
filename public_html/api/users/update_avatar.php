@@ -23,10 +23,10 @@ if (!in_array($file['type'], $allowedTypes)) {
     Response::error("Invalid file type. Only JPG, PNG and WEBP allowed.");
 }
 
-$maxSize = 10 * 1024 * 1024; // 10MB
+$maxSize = 20 * 1024 * 1024; // 20MB
 if ($file['size'] > $maxSize) {
     file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] update_avatar ERROR: File too large " . $file['size'] . "\n", FILE_APPEND);
-    Response::error("File too large. Max 10MB.");
+    Response::error("File too large. Max 20MB.");
 }
 
 // Create uploads directory if not exists

@@ -4,20 +4,23 @@ RewriteEngine On
 # Ensure index.html is served for the directory
 DirectoryIndex index.html
 
-# Force HTML content type for .html files
-<FilesMatch "\.html$">
-    Header set Content-Type "text/html"
-</FilesMatch>
+# Force correct content types safely
+<IfModule mod_headers.c>
+    <FilesMatch "\.html$">
+        Header set Content-Type "text/html"
+    </FilesMatch>
+    <FilesMatch "\.css$">
+        Header set Content-Type "text/css"
+    </FilesMatch>
+    <FilesMatch "\.js$">
+        Header set Content-Type "application/javascript"
+    </FilesMatch>
+</IfModule>
 
-# Force CSS content type
-<FilesMatch "\.css$">
-    Header set Content-Type "text/css"
-</FilesMatch>
-
-# Force JS content type
-<FilesMatch "\.js$">
-    Header set Content-Type "application/javascript"
-</FilesMatch>
+# Alternative type setting
+AddType text/html .html
+AddType text/css .css
+AddType application/javascript .js
 
 # Disable directory listing
 Options -Indexes

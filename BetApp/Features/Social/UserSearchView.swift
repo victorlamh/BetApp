@@ -4,6 +4,7 @@ struct UserSearchView: View {
     @State private var searchText = ""
     @State private var users: [SearchUser] = []
     @State private var isLoading = false
+    @State private var searchError: String? = nil
     
     var body: some View {
         NavigationView {
@@ -31,8 +32,23 @@ struct UserSearchView: View {
                     if isLoading {
                         ProgressView().tint(AppTheme.primary)
                         Spacer()
+                    } else if let error = searchError {
+                        VStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text("Search Error")
+                                .font(.headline)
+                                .foregroundColor(AppTheme.textPrimary)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+                        .padding()
+                        Spacer()
                     } else if users.isEmpty && !searchText.isEmpty {
-                        Text("No players found.")
+                        Text("No players found for \"\(searchText)\"")
                             .foregroundColor(AppTheme.textSecondary)
                             .padding()
                         Spacer()
@@ -52,6 +68,7 @@ struct UserSearchView: View {
     
     func searchUsers() {
         isLoading = true
+        searchError = nil
         Task {
             do {
                 let encodedQuery = searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? searchText
@@ -61,7 +78,10 @@ struct UserSearchView: View {
                     self.isLoading = false
                 }
             } catch {
-                DispatchQueue.main.async { self.isLoading = false }
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.searchError = error.localizedDescription
+                }
             }
         }
     }

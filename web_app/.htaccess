@@ -1,0 +1,23 @@
+# Security & Routing for the Web App
+RewriteEngine On
+
+# Ensure index.html is served for the directory
+DirectoryIndex index.html
+
+# Force HTML content type for .html files
+<FilesMatch "\.html$">
+    Header set Content-Type "text/html"
+</FilesMatch>
+
+# Force CSS content type
+<FilesMatch "\.css$">
+    Header set Content-Type "text/css"
+</FilesMatch>
+
+# Force JS content type
+<FilesMatch "\.js$">
+    Header set Content-Type "application/javascript"
+</FilesMatch>
+
+# Disable directory listing
+Options -Indexes

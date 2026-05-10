@@ -35,11 +35,6 @@ struct MainTabView: View {
                     Label("My Bets", systemImage: "ticket.fill")
                 }
             
-            AdminView()
-                .tabItem {
-                    Label("Admin", systemImage: "shield.fill")
-                }
-            
             NotificationsView()
                 .tabItem {
                     Label("Activity", systemImage: "bell.fill")

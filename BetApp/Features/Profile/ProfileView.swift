@@ -99,6 +99,13 @@ struct ProfileView: View {
                                 NavigationLink(destination: MyBetsView()) {
                                     ProfileButton(label: "My Bets", icon: "ticket.fill")
                                 }
+                                
+                                if authStore.currentUser?.role == "admin" || authStore.currentUser?.role == "moderator" {
+                                    NavigationLink(destination: AdminView()) {
+                                        ProfileButton(label: "Management Panel", icon: "shield.fill")
+                                    }
+                                }
+                                
                                 ProfileButton(label: "Wallet History", icon: "list.bullet.rectangle")
                                 ProfileButton(label: "Security", icon: "lock.shield")
                                 

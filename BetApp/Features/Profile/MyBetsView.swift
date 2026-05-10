@@ -140,7 +140,7 @@ struct WagerHistoryCard: View {
         .cornerRadius(AppTheme.Radius.m)
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                .stroke(wager.status == "active" ? AppTheme.primary.opacity(0.2) : Color.clear, lineWidth: 1)
+                .stroke(wager.status == "active" ? AppTheme.primary.opacity(0.3) : AppTheme.textSecondary.opacity(0.1), lineWidth: 1)
         )
     }
 }

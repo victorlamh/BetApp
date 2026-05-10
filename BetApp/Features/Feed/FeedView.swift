@@ -72,24 +72,29 @@ struct FeedView: View {
     }
     
     private var walletHeader: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text("Your Balance")
-                    .font(.caption)
+        HStack(spacing: AppTheme.Spacing.m) {
+            Circle()
+                .fill(AppTheme.primary.opacity(0.1))
+                .frame(width: 44, height: 44)
+                .overlay(Image(systemName: "wallet.pass.fill").foregroundColor(AppTheme.primary))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AVAILABLE BALANCE")
+                    .font(.system(size: 8, weight: .black))
                     .foregroundColor(AppTheme.textSecondary)
                 Text("\(String(format: "%.2f", viewModel.balance))€")
-                    .font(.title2)
-                    .bold()
+                    .font(.title3.bold())
                     .foregroundColor(AppTheme.textPrimary)
             }
             Spacer()
-            Image(systemName: "wallet.pass.fill")
-                .font(.title)
-                .foregroundColor(AppTheme.primary)
         }
         .padding()
-        .background(AppTheme.cardBackground)
+        .background(Color.black)
         .cornerRadius(AppTheme.Radius.m)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.m)
+                .stroke(AppTheme.primary.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 
@@ -108,7 +113,6 @@ class FeedViewModel: ObservableObject {
         }
         do {
             let fetchedBets: [Bet] = try await APIClient.shared.request("bets/feed.php")
-            // Also fetch wallet
             struct WalletResponse: Decodable { let walletBalance: Double }
             let wallet: WalletResponse = try await APIClient.shared.request("auth/me.php")
             
@@ -144,58 +148,58 @@ struct BetCard: View {
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
+            // Header
             HStack {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Circle()
                         .fill(statusColor)
                         .frame(width: 6, height: 6)
                     Text(displayStatusLabel)
-                        .font(.caption2).bold()
+                        .font(.system(size: 10, weight: .black))
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(statusColor.opacity(0.1))
-                .foregroundColor(statusColor)
+                .background(statusColor)
+                .foregroundColor(.black)
                 .cornerRadius(4)
                 
                 if bet.status == "live" {
                     Text(timeRemaining)
-                        .font(.caption2.monospacedDigit())
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(timeRemaining.contains("!") ? .orange : AppTheme.textSecondary)
-                        .onReceive(timer) { _ in
-                            updateTimeRemaining()
-                        }
+                        .onReceive(timer) { _ in updateTimeRemaining() }
                 }
                 
                 Spacer()
                 
-                Text(bet.creatorName)
-                    .font(.caption)
+                Text("@\(bet.creatorName)")
+                    .font(.caption2).bold()
                     .foregroundColor(AppTheme.textSecondary)
             }
             
             Text(bet.title)
-                .font(.headline)
+                .font(.title3.bold())
                 .foregroundColor(AppTheme.textPrimary)
                 .lineLimit(2)
             
-            HStack(spacing: 12) {
+            // Odds
+            HStack(spacing: 8) {
                 if let outcomes = bet.outcomes {
                     let minCoeff = outcomes.map { $0.coefficient }.min() ?? 0
-                    let maxCoeff = outcomes.map { $0.coefficient }.max() ?? 0
                     
                     ForEach(outcomes.prefix(2)) { outcome in
                         HStack {
                             Text(outcome.label)
-                                .lineLimit(1)
+                                .font(.caption.bold())
+                                .foregroundColor(AppTheme.textPrimary)
                             Spacer()
                             Text(String(format: "%.2f", outcome.coefficient))
+                                .font(.system(.subheadline, design: .monospaced))
                                 .bold()
-                                .foregroundColor(outcome.coefficient == minCoeff ? AppTheme.oddsUp : (outcome.coefficient == maxCoeff ? AppTheme.oddsDown : AppTheme.primary))
+                                .foregroundColor(outcome.coefficient == minCoeff ? AppTheme.oddsUp : AppTheme.primary)
                         }
-                        .font(.caption)
-                        .padding(10)
+                        .padding(12)
                         .background(AppTheme.secondary.opacity(0.4))
                         .cornerRadius(AppTheme.Radius.s)
                         .frame(maxWidth: .infinity)
@@ -204,8 +208,12 @@ struct BetCard: View {
             }
         }
         .padding()
-        .background(AppTheme.cardBackground)
+        .background(Color.black)
         .cornerRadius(AppTheme.Radius.m)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.m)
+                .stroke(isLocked ? Color.orange.opacity(0.4) : AppTheme.primary.opacity(0.2), lineWidth: 1.5)
+        )
         .onAppear { updateTimeRemaining() }
     }
     
@@ -222,9 +230,7 @@ struct BetCard: View {
                 timeRemaining = String(format: "ENDS IN: %02dh %02dm", hours, minutes)
             } else {
                 timeRemaining = String(format: "ENDS IN: %02d:%02d", minutes, seconds)
-                if minutes < 10 {
-                    timeRemaining += "!"
-                }
+                if minutes < 10 { timeRemaining += "!" }
             }
         }
     }

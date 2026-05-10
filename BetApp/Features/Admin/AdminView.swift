@@ -285,6 +285,19 @@ struct AdminLiveBetCard: View {
                             .cornerRadius(8)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    
+                    Button {
+                        performAction(action: "lock")
+                    } label: {
+                        Label("Close Now", systemImage: "lock.fill")
+                            .font(.caption)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Color.yellow.opacity(0.2))
+                            .foregroundColor(.yellow)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             } else {
                 ProgressView().tint(AppTheme.primary)

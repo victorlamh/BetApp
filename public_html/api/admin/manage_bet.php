@@ -63,6 +63,9 @@ try {
         $db->query("UPDATE wagers SET status = 'void' WHERE bet_id = ?", [$betId]);
         $db->query("UPDATE bets SET status = 'void', void_reason = ? WHERE id = ?", [$reason, $betId]);
         $message = "Bet voided and all wagers refunded.";
+    } elseif ($action === 'lock') {
+        $db->query("UPDATE bets SET status = 'locked', close_at = NOW() WHERE id = ?", [$betId]);
+        $message = "Bet closed for wagering.";
     }
 
     $db->commit();

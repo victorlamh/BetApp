@@ -203,8 +203,6 @@ struct BetDetailView: View {
                 .padding()
         }
     }
-}
-
     private func statusColor(_ status: String) -> Color {
         switch status {
         case "live": return AppTheme.accent

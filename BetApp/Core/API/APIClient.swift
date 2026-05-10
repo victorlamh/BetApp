@@ -76,6 +76,9 @@ class APIClient {
             throw APIError.unauthorized
         }
         
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
         if !(200...299).contains(httpResponse.statusCode) {
             // Try to read actual error message from PHP response body
             if let errorJson = try? decoder.decode(APIResponse<String>.self, from: data),
@@ -84,9 +87,6 @@ class APIClient {
             }
             throw APIError.serverError("Server Error: \(httpResponse.statusCode)")
         }
-        
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         
         do {
             let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)

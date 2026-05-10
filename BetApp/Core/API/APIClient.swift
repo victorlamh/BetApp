@@ -77,6 +77,11 @@ class APIClient {
         }
         
         if !(200...299).contains(httpResponse.statusCode) {
+            // Try to read actual error message from PHP response body
+            if let errorJson = try? decoder.decode(APIResponse<String>.self, from: data),
+               let msg = errorJson.message {
+                throw APIError.serverError("[\(httpResponse.statusCode)] \(msg)")
+            }
             throw APIError.serverError("Server Error: \(httpResponse.statusCode)")
         }
         

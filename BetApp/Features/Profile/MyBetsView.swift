@@ -22,7 +22,10 @@ struct MyBetsView: View {
                 ScrollView {
                     LazyVStack(spacing: AppTheme.Spacing.m) {
                         ForEach(wagers) { wager in
-                            WagerHistoryCard(wager: wager)
+                            NavigationLink(destination: BetDetailView(betId: wager.betId)) {
+                                WagerHistoryCard(wager: wager)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .padding()
@@ -50,14 +53,15 @@ struct MyBetsView: View {
 
 struct WagerHistoryItem: Identifiable, Decodable {
     let id: Int
-    let bet_id: Int
+    let betId: Int
     let title: String
-    let outcome_label: String
+    let outcomeLabel: String
     let stake: Double
-    let locked_coefficient: Double
-    let potential_return: Double
+    let lockedCoefficient: Double
+    let potentialReturn: Double
     let status: String
-    let bet_status: String
+    let betStatus: String
+    let winningOutcomeLabel: String?
 }
 
 struct WagerHistoryCard: View {
@@ -78,37 +82,55 @@ struct WagerHistoryCard: View {
                 Text(wager.title)
                     .font(.headline)
                     .foregroundColor(AppTheme.textPrimary)
+                    .lineLimit(1)
                 Spacer()
                 Text(wager.status.uppercased())
-                    .font(.caption2)
-                    .bold()
-                    .padding(4)
-                    .background(statusColor.opacity(0.2))
+                    .font(.caption2).bold()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(statusColor.opacity(0.1))
                     .foregroundColor(statusColor)
                     .cornerRadius(4)
             }
             
-            Text("Picked: \(wager.outcome_label) @ \(String(format: "%.2f", wager.locked_coefficient))")
-                .font(.subheadline)
-                .foregroundColor(AppTheme.textSecondary)
+            HStack {
+                Text(wager.outcomeLabel)
+                    .font(.subheadline)
+                    .foregroundColor(AppTheme.textSecondary)
+                
+                if let winner = wager.winningOutcomeLabel, wager.status == "lost" {
+                    Text("•")
+                    Text("Winner: \(winner)")
+                        .font(.caption2)
+                        .foregroundColor(AppTheme.oddsUp)
+                }
+                
+                Spacer()
+                Text("@ \(String(format: "%.2f", wager.lockedCoefficient))")
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(AppTheme.primary)
+            }
             
-            Divider().background(AppTheme.textSecondary.opacity(0.2))
+            Divider().background(AppTheme.textSecondary.opacity(0.1))
             
             HStack {
-                VStack(alignment: .leading) {
-                    Text("Stake")
-                        .font(.caption2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("STAKE")
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundColor(AppTheme.textSecondary)
                     Text("\(String(format: "%.2f", wager.stake))€")
+                        .font(.subheadline.bold())
                         .foregroundColor(AppTheme.textPrimary)
                 }
+                
                 Spacer()
-                VStack(alignment: .trailing) {
-                    Text(wager.status == "won" ? "Payout" : "Potential Payout")
-                        .font(.caption2)
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(wager.status == "won" ? "PAYOUT" : "POTENTIAL")
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundColor(AppTheme.textSecondary)
-                    Text("\(String(format: "%.2f", wager.potential_return))€")
-                        .bold()
+                    Text("\(String(format: "%.2f", wager.potentialReturn))€")
+                        .font(.subheadline.bold())
                         .foregroundColor(wager.status == "won" ? AppTheme.oddsUp : AppTheme.textPrimary)
                 }
             }
@@ -116,5 +138,9 @@ struct WagerHistoryCard: View {
         .padding()
         .background(AppTheme.cardBackground)
         .cornerRadius(AppTheme.Radius.m)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.m)
+                .stroke(wager.status == "active" ? AppTheme.primary.opacity(0.2) : Color.clear, lineWidth: 1)
+        )
     }
 }

@@ -16,7 +16,7 @@ try {
     $db->beginTransaction();
 
     // 1. Fetch bet and verify it's not already settled
-    $bet = $db->fetchOne("SELECT status FROM bets WHERE id = ? FOR UPDATE", [$betId]);
+    $bet = $db->fetchOne("SELECT title, status FROM bets WHERE id = ? FOR UPDATE", [$betId]);
     if (!$bet) throw new Exception("Bet not found");
     if ($bet['status'] === 'settled') throw new Exception("Bet is already settled");
 
@@ -42,10 +42,21 @@ try {
                 [$userId, $potentialReturn, $wallet['balance'], $newBalance, $betId, $wagerId, "Winning payout for bet #$betId"]
             );
             $db->query("UPDATE wagers SET status = 'won' WHERE id = ?", [$wagerId]);
+            
+            // Notification
+            $db->query(
+                "INSERT INTO notifications (user_id, type, target_id, message) VALUES (?, 'bet_settled', ?, ?)",
+                [$userId, $betId, "🎉 WINNER! You won " . number_format($potentialReturn, 2) . "€ on: " . $bet['title']]
+            );
         } else {
             // LOSER
             $db->query("UPDATE wagers SET status = 'lost' WHERE id = ?", [$wagerId]);
-            // Money was already deducted at placement, so just mark as loss
+            
+            // Notification
+            $db->query(
+                "INSERT INTO notifications (user_id, type, target_id, message) VALUES (?, 'bet_settled', ?, ?)",
+                [$userId, $betId, "😔 You lost " . number_format($stake, 2) . "€ on: " . $bet['title']]
+            );
         }
     }
 

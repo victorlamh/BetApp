@@ -13,6 +13,7 @@ struct Bet: Codable, Identifiable {
     let isBoosted: Int?
     let proofRequired: Int?
     let closeAt: String
+    let resultOutcomeId: Int?
     let outcomes: [BetOutcome]?
     let myWager: Wager?
     

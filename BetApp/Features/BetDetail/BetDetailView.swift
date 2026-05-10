@@ -101,6 +101,8 @@ struct BetDetailView: View {
                 .foregroundColor(AppTheme.textPrimary)
             
             ForEach(bet.outcomes ?? []) { outcome in
+                let isWinner = bet.resultOutcomeId == outcome.id
+                
                 Button(action: {
                     if bet.status == "live" && bet.myWager == nil {
                         selectedOutcome = outcome
@@ -108,23 +110,30 @@ struct BetDetailView: View {
                     }
                 }) {
                     HStack {
-                        Text(outcome.label)
-                            .foregroundColor(AppTheme.textPrimary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(outcome.label)
+                                .foregroundColor(AppTheme.textPrimary)
+                            if isWinner {
+                                Text("WINNING OUTCOME")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(AppTheme.oddsUp)
+                            }
+                        }
                         Spacer()
                         Text(String(format: "%.2f", outcome.coefficient))
                             .font(.system(.title3, design: .monospaced))
                             .bold()
-                            .foregroundColor(selectedOutcome?.id == outcome.id ? .black : AppTheme.oddsUp)
+                            .foregroundColor(selectedOutcome?.id == outcome.id || isWinner ? .black : AppTheme.oddsUp)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(selectedOutcome?.id == outcome.id ? AppTheme.oddsUp : AppTheme.oddsUp.opacity(0.1))
+                            .background(selectedOutcome?.id == outcome.id || isWinner ? AppTheme.oddsUp : AppTheme.oddsUp.opacity(0.1))
                             .cornerRadius(4)
                     }
                     .padding()
                     .background(AppTheme.cardBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                            .stroke(selectedOutcome?.id == outcome.id ? AppTheme.oddsUp : Color.clear, lineWidth: 2)
+                            .stroke(isWinner ? AppTheme.oddsUp : (selectedOutcome?.id == outcome.id ? AppTheme.oddsUp : Color.clear), lineWidth: 2)
                     )
                     .cornerRadius(AppTheme.Radius.m)
                 }

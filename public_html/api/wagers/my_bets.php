@@ -6,10 +6,11 @@ $userId = Auth::userId();
 $db = DB::getInstance();
 
 $wagers = $db->fetchAll(
-    "SELECT w.*, b.title, bo.label as outcome_label, b.status as bet_status
+    "SELECT w.*, b.title, bo.label as outcome_label, b.status as bet_status, wbo.label as winning_outcome_label
      FROM wagers w
      JOIN bets b ON w.bet_id = b.id
      JOIN bet_outcomes bo ON w.outcome_id = bo.id
+     LEFT JOIN bet_outcomes wbo ON b.result_outcome_id = wbo.id
      WHERE w.user_id = ?
      ORDER BY w.placed_at DESC",
     [$userId]

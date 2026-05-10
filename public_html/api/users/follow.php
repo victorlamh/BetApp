@@ -64,6 +64,13 @@ switch ($action) {
             "INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'follow_accepted', ?, ?)",
             [$targetId, Auth::user()['username'] . " accepted your follow request", $currentUserId]
         );
+
+        // Mark the original follow request notification as read
+        $db->query(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND related_id = ? AND type = 'follow_request'",
+            [$currentUserId, $targetId]
+        );
+
         Response::success((object)[], "Follow request accepted");
         break;
 
@@ -74,6 +81,13 @@ switch ($action) {
         );
         $count = $db->rowCount();
         file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php REFUSE: affected=$count targetId=$targetId currentUserId=$currentUserId\n", FILE_APPEND);
+        
+        // Mark the original follow request notification as read
+        $db->query(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND related_id = ? AND type = 'follow_request'",
+            [$currentUserId, $targetId]
+        );
+
         Response::success((object)[], "Request refused");
         break;
 

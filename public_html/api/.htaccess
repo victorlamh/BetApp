@@ -18,7 +18,7 @@ Header set Content-Type "application/json"
 </FilesMatch>
 
 # Allow access to API endpoints
-<FilesMatch "(register|login|logout|me|profile|friends_list|friend_request_send|friend_request_accept|stats|feed|detail|create|submit_review|update_draft|lock|propose_result|validate_result|void|report|place|mine|cancel_if_allowed|global|friends|weekly|queue|approve|reject|disputes|settle_override|blocked_terms_list|blocked_terms_save|boosted_bet_create|list|review|search|search_users|manage_bet|settle_bet|follow|my_bets|update_avatar)\.php$">
+<FilesMatch "(register|login|logout|me|profile|friends_list|friend_request_send|friend_request_accept|stats|feed|detail|create|submit_review|update_draft|lock|propose_result|validate_result|void|report|place|mine|cancel_if_allowed|global|friends|weekly|queue|approve|reject|disputes|settle_override|blocked_terms_list|blocked_terms_save|boosted_bet_create|list|review|search|search_users|manage_bet|settle_bet|follow|my_bets|update_avatar|inspect_db)\.php$">
     Order deny,allow
     Allow from all
 </FilesMatch>

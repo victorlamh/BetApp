@@ -85,21 +85,22 @@ struct WagerHistoryCard: View {
                     .lineLimit(1)
                 Spacer()
                 Text(wager.status.uppercased())
-                    .font(.caption2).bold()
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(statusColor.opacity(0.1))
-                    .foregroundColor(statusColor)
+                    .font(.system(size: 10, weight: .black))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(statusColor)
+                    .foregroundColor(.black)
                     .cornerRadius(4)
             }
             
             HStack {
                 Text(wager.outcomeLabel)
-                    .font(.subheadline)
-                    .foregroundColor(AppTheme.textSecondary)
+                    .font(.subheadline).bold()
+                    .foregroundColor(AppTheme.textPrimary)
                 
                 if let winner = wager.winningOutcomeLabel, wager.status == "lost" {
                     Text("•")
+                        .foregroundColor(AppTheme.textSecondary)
                     Text("Winner: \(winner)")
                         .font(.caption2)
                         .foregroundColor(AppTheme.oddsUp)
@@ -107,40 +108,42 @@ struct WagerHistoryCard: View {
                 
                 Spacer()
                 Text("@ \(String(format: "%.2f", wager.lockedCoefficient))")
-                    .font(.caption.monospacedDigit())
+                    .font(.system(.subheadline, design: .monospaced))
+                    .bold()
                     .foregroundColor(AppTheme.primary)
             }
+            .padding(.vertical, 4)
             
-            Divider().background(AppTheme.textSecondary.opacity(0.1))
+            Divider().background(AppTheme.textSecondary.opacity(0.2))
             
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("STAKE")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 9, weight: .black))
                         .foregroundColor(AppTheme.textSecondary)
                     Text("\(String(format: "%.2f", wager.stake))€")
-                        .font(.subheadline.bold())
+                        .font(.title3.bold())
                         .foregroundColor(AppTheme.textPrimary)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 4) {
                     Text(wager.status == "won" ? "PAYOUT" : "POTENTIAL")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 9, weight: .black))
                         .foregroundColor(AppTheme.textSecondary)
                     Text("\(String(format: "%.2f", wager.potentialReturn))€")
-                        .font(.subheadline.bold())
+                        .font(.title3.bold())
                         .foregroundColor(wager.status == "won" ? AppTheme.oddsUp : AppTheme.textPrimary)
                 }
             }
         }
         .padding()
-        .background(AppTheme.cardBackground)
+        .background(Color.black) // Darker background for more contrast
         .cornerRadius(AppTheme.Radius.m)
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                .stroke(wager.status == "active" ? AppTheme.primary.opacity(0.3) : AppTheme.textSecondary.opacity(0.1), lineWidth: 1)
+                .stroke(wager.status == "active" ? AppTheme.primary : AppTheme.textSecondary.opacity(0.3), lineWidth: 1.5)
         )
     }
 }

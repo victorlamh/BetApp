@@ -97,25 +97,27 @@ struct ProfileView: View {
                             // Actions section
                             VStack(spacing: AppTheme.Spacing.m) {
                                 NavigationLink(destination: MyBetsView()) {
-                                    ProfileButton(label: "My Bets", icon: "ticket.fill")
+                                    ProfileRow(label: "My Bets", icon: "ticket.fill")
                                 }
                                 
                                 if authStore.currentUser?.role == "admin" || authStore.currentUser?.role == "moderator" {
                                     NavigationLink(destination: AdminView()) {
-                                        ProfileButton(label: "Management Panel", icon: "shield.fill")
+                                        ProfileRow(label: "Management Panel", icon: "shield.fill", color: AppTheme.primary)
                                     }
                                 }
                                 
-                                ProfileButton(label: "Wallet History", icon: "list.bullet.rectangle")
-                                ProfileButton(label: "Security", icon: "lock.shield")
-                                
                                 Button(action: { authStore.logout() }) {
-                                    Label("Logout", systemImage: "arrow.right.square")
-                                        .foregroundColor(AppTheme.danger)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding()
-                                        .background(AppTheme.cardBackground)
-                                        .cornerRadius(AppTheme.Radius.m)
+                                    HStack {
+                                        Image(systemName: "arrow.right.square")
+                                        Text("Logout")
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption2)
+                                    }
+                                    .foregroundColor(AppTheme.danger)
+                                    .padding()
+                                    .background(AppTheme.cardBackground)
+                                    .cornerRadius(AppTheme.Radius.m)
                                 }
                             }
                         }
@@ -232,18 +234,24 @@ struct StatItem: View {
     }
 }
 
-struct ProfileButton: View {
+struct ProfileRow: View {
     let label: String
     let icon: String
+    var color: Color = AppTheme.textPrimary
     
     var body: some View {
-        Button(action: {}) {
-            Label(label, systemImage: icon)
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+            Text(label)
                 .foregroundColor(AppTheme.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(AppTheme.cardBackground)
-                .cornerRadius(AppTheme.Radius.m)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption2)
+                .foregroundColor(AppTheme.textSecondary)
         }
+        .padding()
+        .background(AppTheme.cardBackground)
+        .cornerRadius(AppTheme.Radius.m)
     }
 }

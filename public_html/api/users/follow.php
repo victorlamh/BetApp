@@ -12,8 +12,9 @@ if (!$targetId) {
 
 $db = DB::getInstance();
 $currentUserId = Auth::userId();
+$rawInput = file_get_contents('php://input');
 
-file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php: userId=$currentUserId action=$action targetId=$targetId\n", FILE_APPEND);
+file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php: userId=$currentUserId action=$action targetId=$targetId raw=$rawInput\n", FILE_APPEND);
 
 switch ($action) {
     case 'request':

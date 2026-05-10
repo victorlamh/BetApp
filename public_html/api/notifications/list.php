@@ -18,6 +18,7 @@ foreach ($notifications as &$n) {
     $n['user_id'] = (int)$n['user_id'];
     $n['related_id'] = $n['related_id'] ? (int)$n['related_id'] : null;
     $n['is_read'] = (bool)$n['is_read'];
+    file_put_contents(__DIR__ . '/../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Notification: ID={$n['id']} Type={$n['type']} Related=" . ($n['related_id'] ?? 'NULL') . "\n", FILE_APPEND);
 }
 
 Response::success($notifications);

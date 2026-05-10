@@ -57,6 +57,9 @@ struct NotificationRow: View {
     let onAction: () -> Void
     @State private var isProcessing = false
     
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
@@ -96,6 +99,7 @@ struct NotificationRow: View {
                                 .foregroundColor(.black)
                                 .cornerRadius(8)
                         }
+                        .buttonStyle(BorderlessButtonStyle())
                         
                         Button(action: { handleRequest(accept: false, requesterId: requesterId) }) {
                             Text("Refuse")
@@ -109,6 +113,7 @@ struct NotificationRow: View {
                                         .stroke(AppTheme.textSecondary.opacity(0.3), lineWidth: 1)
                                 )
                         }
+                        .buttonStyle(BorderlessButtonStyle())
                     }
                 }
                 .padding(.leading, 42)
@@ -117,6 +122,11 @@ struct NotificationRow: View {
         .padding()
         .background(AppTheme.cardBackground)
         .cornerRadius(AppTheme.Radius.m)
+        .alert("Request Failed", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
     }
     
     func handleRequest(accept: Bool, requesterId: Int) {
@@ -133,15 +143,17 @@ struct NotificationRow: View {
                     ]
                 )
                 
-                // Also mark notification as read (optional but good)
-                // Let's just refresh the list
                 DispatchQueue.main.async {
                     isProcessing = false
                     onAction()
                 }
             } catch {
                 print("Failed to handle follow request: \(error)")
-                DispatchQueue.main.async { isProcessing = false }
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                    self.showAlert = true
+                    self.isProcessing = false
+                }
             }
         }
     }

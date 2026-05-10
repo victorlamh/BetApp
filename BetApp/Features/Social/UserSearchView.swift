@@ -72,9 +72,9 @@ struct UserSearchView: View {
         Task {
             do {
                 // Build URL safely using URLComponents
-                var components = URLComponents(string: "users/search.php")!
+                var components = URLComponents(string: "bets/search_users.php")!
                 components.queryItems = [URLQueryItem(name: "q", value: searchText)]
-                let endpoint = components.string ?? "users/search.php?q=\(searchText)"
+                let endpoint = components.string ?? "bets/search_users.php?q=\(searchText)"
                 let foundUsers: [SearchUser] = try await APIClient.shared.request(endpoint)
                 DispatchQueue.main.async {
                     self.users = foundUsers

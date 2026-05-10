@@ -167,7 +167,8 @@ struct CreateBetView: View {
         errorMessage = nil
         
         let formatter = DateFormatter()
-        formatter.dateFormat = "YYYY-MM-dd HH:mm:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0) // Send as UTC
         
         // Final coefficients calculation
         var finalOutcomes: [[String: Any]] = []

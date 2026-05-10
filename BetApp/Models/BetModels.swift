@@ -26,6 +26,13 @@ struct Bet: Codable, Identifiable {
         formatter.timeZone = TimeZone(secondsFromGMT: 0) // Assume UTC from DB
         return formatter.date(from: closeAt) ?? Date()
     }
+    
+    var localizedCloseAt: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: closeDate)
+    }
 }
 
 struct BetOutcome: Codable, Identifiable {

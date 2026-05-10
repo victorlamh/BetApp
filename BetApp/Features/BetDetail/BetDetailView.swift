@@ -77,7 +77,7 @@ struct BetDetailView: View {
                         .font(.caption.monospacedDigit())
                         .foregroundColor(AppTheme.textSecondary)
                 } else {
-                    Text("Closed \(bet.closeAt)")
+                    Text("Closed \(bet.localizedCloseAt)")
                         .font(.caption)
                         .foregroundColor(AppTheme.textSecondary)
                 }

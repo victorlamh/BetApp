@@ -196,8 +196,8 @@ struct AdminBetCard: View {
         
         Task {
             do {
-                struct SimpleResponse: Decodable { let status: String; let betId: Int?; let action: String? }
-                let _: SimpleResponse = try await APIClient.shared.request(
+                struct EmptyResponse: Decodable {}
+                let _: EmptyResponse = try await APIClient.shared.request(
                     "moderator/review.php",
                     method: "POST",
                     body: ["bet_id": bet.id, "action": approve ? "approve" : "reject", "notes": "Moderated via iOS"]
@@ -313,8 +313,8 @@ struct AdminLiveBetCard: View {
         
         Task {
             do {
-                struct SimpleResponse: Decodable { let status: String }
-                let _: SimpleResponse = try await APIClient.shared.request(
+                struct EmptyResponse: Decodable { }
+                let _: EmptyResponse = try await APIClient.shared.request(
                     "admin/manage_bet.php",
                     method: "POST",
                     body: [
@@ -429,8 +429,8 @@ struct AdminSettleCard: View {
         
         Task {
             do {
-                struct SimpleResponse: Decodable { let status: String }
-                let _: SimpleResponse = try await APIClient.shared.request(
+                struct EmptyResponse: Decodable { }
+                let _: EmptyResponse = try await APIClient.shared.request(
                     "admin/settle_bet.php",
                     method: "POST",
                     body: [

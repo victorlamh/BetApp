@@ -182,8 +182,8 @@ struct UserRow: View {
         isFollowLoading = true
         Task {
             do {
-                struct SimpleRes: Decodable { let status: String }
-                let _: SimpleRes = try await APIClient.shared.request(
+                struct EmptyResponse: Decodable {}
+                let _: EmptyResponse = try await APIClient.shared.request(
                     "users/follow.php",
                     method: "POST",
                     body: ["action": "request", "user_id": user.id]

@@ -111,8 +111,19 @@ class APIClient {
         
         do {
             let apiResponse = try decoder.decode(APIResponse<T>.self, from: data)
-            if apiResponse.status == "success", let result = apiResponse.data {
-                return result
+            if apiResponse.status == "success" {
+                if let result = apiResponse.data {
+                    return result
+                }
+                // If T is optional, we could return nil, but for now let's try to decode from empty object if possible
+                // or if T is a dummy type, just return a "fake" instance if we can.
+                // But a safer way is to just throw if T is required and data is nil.
+                // However, many of our endpoints return "success" with no data.
+                
+                // Let's check if T can be initialized from an empty dict
+                if let emptyData = "{}".data(using: .utf8), let result = try? decoder.decode(T.self, from: emptyData) {
+                    return result
+                }
             }
             let msg = apiResponse.message ?? "Unknown server error"
             throw APIError.serverError(msg)

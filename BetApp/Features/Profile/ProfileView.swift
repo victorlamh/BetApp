@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct ProfileView: View {
     @ObservedObject var authStore = AuthStore.shared
@@ -12,6 +13,8 @@ struct ProfileView: View {
     // Avatar Upload
     @State private var selectedItem: PhotosPickerItem?
     @State private var isUploading = false
+    @State private var uploadError: String? = nil
+    @State private var showUploadError = false
     
     var body: some View {
         NavigationView {
@@ -115,6 +118,11 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .onAppear(perform: fetchProfileStats)
+            .alert("Upload Failed", isPresented: $showUploadError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(uploadError ?? "Unknown error")
+            }
         }
     }
     
@@ -157,22 +165,30 @@ struct ProfileView: View {
         
         Task {
             do {
-                guard let data = try await item.loadTransferable(type: Data.self) else {
-                    isUploading = false
+                guard let rawData = try await item.loadTransferable(type: Data.self) else {
+                    DispatchQueue.main.async { self.isUploading = false }
                     return
+                }
+                
+                // Compress to JPEG to avoid sending huge HEIC/RAW files
+                let compressedData: Data
+                if let uiImage = UIImage(data: rawData),
+                   let jpeg = uiImage.jpegData(compressionQuality: 0.6) {
+                    compressedData = jpeg
+                } else {
+                    compressedData = rawData
                 }
                 
                 struct AvatarRes: Decodable { let avatarUrl: String }
                 let res: AvatarRes = try await APIClient.shared.upload(
                     "users/update_avatar.php",
-                    fileData: data,
+                    fileData: compressedData,
                     fileName: "avatar.jpg",
                     mimeType: "image/jpeg",
                     fieldName: "avatar"
                 )
                 
                 DispatchQueue.main.async {
-                    // Update the user object in AuthStore to reflect the new avatar
                     if var user = authStore.currentUser {
                         user.avatarUrl = res.avatarUrl
                         authStore.currentUser = user
@@ -183,8 +199,10 @@ struct ProfileView: View {
             } catch {
                 print("Avatar upload failed: \(error)")
                 DispatchQueue.main.async {
-                    isUploading = false
-                    selectedItem = nil
+                    self.uploadError = error.localizedDescription
+                    self.showUploadError = true
+                    self.isUploading = false
+                    self.selectedItem = nil
                 }
             }
         }

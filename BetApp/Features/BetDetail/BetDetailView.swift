@@ -60,14 +60,18 @@ struct BetDetailView: View {
     private func headerSection(_ bet: Bet) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
             HStack {
+                let isLocked = bet.status == "live" && bet.closeDate <= Date()
+                let displayLabel = isLocked ? "LOCKED" : bet.statusLabel
+                let displayColor = isLocked ? Color.orange : statusColor(bet.status)
+                
                 HStack(spacing: 4) {
-                    Circle().fill(statusColor(bet.status)).frame(width: 6, height: 6)
-                    Text(bet.statusLabel)
+                    Circle().fill(displayColor).frame(width: 6, height: 6)
+                    Text(displayLabel)
                         .font(.caption).bold()
                 }
                 .padding(6)
-                .background(statusColor(bet.status).opacity(0.1))
-                .foregroundColor(statusColor(bet.status))
+                .background(displayColor.opacity(0.1))
+                .foregroundColor(displayColor)
                 .cornerRadius(4)
                 
                 Spacer()

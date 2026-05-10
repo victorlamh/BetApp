@@ -45,7 +45,7 @@ try {
             
             // Notification
             $db->query(
-                "INSERT INTO notifications (user_id, type, target_id, message) VALUES (?, 'bet_settled', ?, ?)",
+                "INSERT INTO notifications (user_id, type, related_id, message) VALUES (?, 'bet_settled', ?, ?)",
                 [$userId, $betId, "🎉 WINNER! You won " . number_format($potentialReturn, 2) . "€ on: " . $bet['title']]
             );
         } else {
@@ -54,7 +54,7 @@ try {
             
             // Notification
             $db->query(
-                "INSERT INTO notifications (user_id, type, target_id, message) VALUES (?, 'bet_settled', ?, ?)",
+                "INSERT INTO notifications (user_id, type, related_id, message) VALUES (?, 'bet_settled', ?, ?)",
                 [$userId, $betId, "😔 You lost " . number_format($stake, 2) . "€ on: " . $bet['title']]
             );
         }

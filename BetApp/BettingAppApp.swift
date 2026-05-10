@@ -30,6 +30,11 @@ struct MainTabView: View {
                     Label("Explore", systemImage: "magnifyingglass")
                 }
             
+            MyBetsView()
+                .tabItem {
+                    Label("My Bets", systemImage: "ticket.fill")
+                }
+            
             AdminView()
                 .tabItem {
                     Label("Admin", systemImage: "shield.fill")

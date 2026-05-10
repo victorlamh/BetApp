@@ -150,7 +150,7 @@ struct BetCard: View {
                     Circle()
                         .fill(statusColor)
                         .frame(width: 6, height: 6)
-                    Text(bet.statusLabel)
+                    Text(displayStatusLabel)
                         .font(.caption2).bold()
                 }
                 .padding(.horizontal, 8)
@@ -229,7 +229,17 @@ struct BetCard: View {
         }
     }
     
+    private var isLocked: Bool {
+        bet.status == "live" && bet.closeDate <= Date()
+    }
+    
+    private var displayStatusLabel: String {
+        if isLocked { return "LOCKED" }
+        return bet.statusLabel
+    }
+    
     private var statusColor: Color {
+        if isLocked { return Color.orange }
         switch bet.status {
         case "live": return AppTheme.accent
         case "locked": return Color.orange

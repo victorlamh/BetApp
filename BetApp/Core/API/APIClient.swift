@@ -29,22 +29,8 @@ class APIClient {
         method: String = "GET",
         body: [String: Any]? = nil
     ) async throws -> T {
-        // Use URLComponents for safe URL construction
         let fullPath = baseURL + "/" + endpoint
-        
-        // Try direct URL first (handles cases where endpoint already has query params)
-        guard let url = URL(string: fullPath) ?? {
-            // Fallback: split on ? and use URLComponents
-            let parts = fullPath.components(separatedBy: "?")
-            var components = URLComponents(string: parts[0])
-            if parts.count > 1 {
-                components?.percentEncodedQuery = parts[1]
-            }
-            return components?.url
-        }() else {
-            print("DEBUG: Invalid URL - \(fullPath)")
-            throw APIError.invalidURL
-        }
+        guard let url = URL(string: fullPath) else { throw APIError.invalidURL }
         
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -58,6 +44,42 @@ class APIClient {
             request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         }
         
+        return try await perform(request)
+    }
+    
+    func upload<T: Decodable>(
+        _ endpoint: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String,
+        fieldName: String = "file"
+    ) async throws -> T {
+        let fullPath = baseURL + "/" + endpoint
+        guard let url = URL(string: fullPath) else { throw APIError.invalidURL }
+        
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        if let token = AuthStore.shared.token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        return try await perform(request)
+    }
+    
+    private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         let data: Data
         let response: URLResponse
         do {
@@ -80,7 +102,6 @@ class APIClient {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         
         if !(200...299).contains(httpResponse.statusCode) {
-            // Try to read actual error message from PHP response body
             if let errorJson = try? decoder.decode(APIResponse<String>.self, from: data),
                let msg = errorJson.message {
                 throw APIError.serverError("[\(httpResponse.statusCode)] \(msg)")
@@ -93,18 +114,12 @@ class APIClient {
             if apiResponse.status == "success", let result = apiResponse.data {
                 return result
             }
-            // Throw server error OUTSIDE the decode try block to avoid it being re-caught
             let msg = apiResponse.message ?? "Unknown server error"
             throw APIError.serverError(msg)
         } catch let apiErr as APIError {
-            // Re-throw our own errors directly (don't wrap them)
             throw apiErr
         } catch {
-            let errorDescription = "\(error)"
-            print("Decoding Error: \(errorDescription)")
-            if let decodingError = error as? DecodingError {
-                throw APIError.serverError("Decoding Fail: \(decodingError)")
-            }
+            print("Decoding Error: \(error)")
             throw APIError.decodingError
         }
     }

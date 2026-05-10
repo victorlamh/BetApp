@@ -1,12 +1,7 @@
 <?php
 require_once __DIR__ . '/../bootstrap.php';
 
-Auth::requireAuth();
-// Check if user is moderator/admin
-$user = Auth::user();
-if ($user['role'] === 'player') {
-    Response::error("Unauthorized", 403);
-}
+Auth::requireRole(['admin', 'moderator']);
 
 Validator::validate($_POST, [
     'bet_id' => 'required|numeric',

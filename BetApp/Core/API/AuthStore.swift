@@ -24,12 +24,13 @@ class AuthStore: ObservableObject {
                         let username: String
                         let displayName: String
                         let role: String
+                        let avatarUrl: String?
                     }
                     let user: UserData
                 }
                 let res: ProfileResponse = try await APIClient.shared.request("users/profile.php")
                 DispatchQueue.main.async {
-                    self.currentUser = User(id: res.user.id, username: res.user.username, displayName: res.user.displayName, role: res.user.role)
+                    self.currentUser = User(id: res.user.id, username: res.user.username, displayName: res.user.displayName, role: res.user.role, avatarUrl: res.user.avatarUrl)
                     self.isAuthenticated = true
                 }
             } catch {
@@ -59,4 +60,5 @@ struct User: Codable, Identifiable {
     let username: String
     let displayName: String
     let role: String
+    var avatarUrl: String?
 }

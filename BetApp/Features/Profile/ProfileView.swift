@@ -1,4 +1,4 @@
-import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
     @ObservedObject var authStore = AuthStore.shared
@@ -7,6 +7,10 @@ struct ProfileView: View {
     @State private var walletBalance: Double = 0.0
     @State private var statPoints: [StatPoint] = []
     @State private var isLoading = true
+    
+    // Avatar Upload
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var isUploading = false
     
     var body: some View {
         NavigationView {
@@ -21,15 +25,46 @@ struct ProfileView: View {
                             
                             // Header: Avatar & Info
                             VStack(spacing: AppTheme.Spacing.m) {
-                                Circle()
-                                    .fill(AppTheme.cardBackground)
-                                    .frame(width: 100, height: 100)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .font(.system(size: 40))
-                                            .foregroundColor(AppTheme.primary)
-                                    )
-                                    .shadow(color: AppTheme.primary.opacity(0.2), radius: 10)
+                                PhotosPicker(selection: $selectedItem, matching: .images) {
+                                    ZStack {
+                                        if let avatarUrl = authStore.currentUser?.avatarUrl, let url = URL(string: avatarUrl) {
+                                            AsyncImage(url: url) { image in
+                                                image.resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                            } placeholder: {
+                                                ProgressView()
+                                            }
+                                            .frame(width: 100, height: 100)
+                                            .clipShape(Circle())
+                                        } else {
+                                            Circle()
+                                                .fill(AppTheme.cardBackground)
+                                                .frame(width: 100, height: 100)
+                                                .overlay(
+                                                    Image(systemName: "person.fill")
+                                                        .font(.system(size: 40))
+                                                        .foregroundColor(AppTheme.primary)
+                                                )
+                                        }
+                                        
+                                        if isUploading {
+                                            Circle()
+                                                .fill(Color.black.opacity(0.5))
+                                                .frame(width: 100, height: 100)
+                                                .overlay(ProgressView().tint(.white))
+                                        }
+                                        
+                                        // Edit icon overlay
+                                        Circle()
+                                            .fill(AppTheme.primary)
+                                            .frame(width: 30, height: 30)
+                                            .overlay(Image(systemName: "camera.fill").font(.caption).foregroundColor(.black))
+                                            .offset(x: 35, y: 35)
+                                    }
+                                }
+                                .disabled(isUploading)
+                                .onChange(of: selectedItem) { _ in uploadAvatar() }
+                                .shadow(color: AppTheme.primary.opacity(0.2), radius: 10)
                                 
                                 VStack(spacing: 4) {
                                     Text(authStore.currentUser?.displayName ?? "User")
@@ -111,6 +146,45 @@ struct ProfileView: View {
             } catch {
                 print("Failed to fetch profile/stats: \(error)")
                 DispatchQueue.main.async { self.isLoading = false }
+            }
+        }
+    }
+    
+    func uploadAvatar() {
+        guard let item = selectedItem else { return }
+        isUploading = true
+        
+        Task {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else {
+                    isUploading = false
+                    return
+                }
+                
+                struct AvatarRes: Decodable { let avatarUrl: String }
+                let res: AvatarRes = try await APIClient.shared.upload(
+                    "users/update_avatar.php",
+                    fileData: data,
+                    fileName: "avatar.jpg",
+                    mimeType: "image/jpeg",
+                    fieldName: "avatar"
+                )
+                
+                DispatchQueue.main.async {
+                    // Update the user object in AuthStore to reflect the new avatar
+                    if var user = authStore.currentUser {
+                        user.avatarUrl = res.avatarUrl
+                        authStore.currentUser = user
+                    }
+                    isUploading = false
+                    selectedItem = nil
+                }
+            } catch {
+                print("Avatar upload failed: \(error)")
+                DispatchQueue.main.async {
+                    isUploading = false
+                    selectedItem = nil
+                }
             }
         }
     }

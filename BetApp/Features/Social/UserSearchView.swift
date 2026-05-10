@@ -93,6 +93,9 @@ struct UserSearchView: View {
 struct UserRow: View {
     let user: SearchUser
     @State private var status: String?
+    @State private var isFollowLoading = false
+    @State private var showAlert = false
+    @State private var alertMessage = ""
     
     init(user: SearchUser) {
         self.user = user
@@ -101,13 +104,24 @@ struct UserRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(AppTheme.cardBackground)
+            if let avatarUrl = user.avatarUrl, let url = URL(string: avatarUrl) {
+                AsyncImage(url: url) { image in
+                    image.resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    ProgressView()
+                }
                 .frame(width: 50, height: 50)
-                .overlay(
-                    Text(user.username.prefix(1).uppercased())
-                        .foregroundColor(AppTheme.primary)
-                )
+                .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(AppTheme.cardBackground)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Text(user.username.prefix(1).uppercased())
+                            .foregroundColor(AppTheme.primary)
+                    )
+            }
             
             VStack(alignment: .leading) {
                 Text(user.displayName)
@@ -138,22 +152,34 @@ struct UserRow: View {
                     .cornerRadius(8)
             } else {
                 Button(action: follow) {
-                    Text("Follow")
-                        .font(.caption).bold()
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(AppTheme.primary)
-                        .foregroundColor(.black)
-                        .cornerRadius(8)
+                    if isFollowLoading {
+                        ProgressView().tint(.black)
+                            .padding(.horizontal, 12)
+                    } else {
+                        Text("Follow")
+                            .font(.caption).bold()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppTheme.primary)
+                            .foregroundColor(.black)
+                            .cornerRadius(8)
+                    }
                 }
+                .disabled(isFollowLoading)
             }
         }
         .padding()
         .background(AppTheme.cardBackground.opacity(0.5))
         .cornerRadius(AppTheme.Radius.m)
+        .alert("Follow Error", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
     }
     
     func follow() {
+        isFollowLoading = true
         Task {
             do {
                 struct SimpleRes: Decodable { let status: String }
@@ -162,9 +188,16 @@ struct UserRow: View {
                     method: "POST",
                     body: ["action": "request", "user_id": user.id]
                 )
-                DispatchQueue.main.async { self.status = "pending" }
+                DispatchQueue.main.async { 
+                    self.status = "pending"
+                    self.isFollowLoading = false
+                }
             } catch {
-                print("Follow failed")
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                    self.showAlert = true
+                    self.isFollowLoading = false
+                }
             }
         }
     }

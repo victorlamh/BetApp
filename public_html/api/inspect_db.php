@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
-Auth::requireAuth();
 
 $db = DB::getInstance();
 $tables = ['users', 'follows', 'notifications', 'wallets', 'bets'];

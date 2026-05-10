@@ -54,7 +54,8 @@ struct UserSearchView: View {
         isLoading = true
         Task {
             do {
-                let foundUsers: [SearchUser] = try await APIClient.shared.request("users/search.php?q=\(searchText)")
+                let encodedQuery = searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? searchText
+                let foundUsers: [SearchUser] = try await APIClient.shared.request("users/search.php?q=\(encodedQuery)")
                 DispatchQueue.main.async {
                     self.users = foundUsers
                     self.isLoading = false

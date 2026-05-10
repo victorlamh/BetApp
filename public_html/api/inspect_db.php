@@ -7,7 +7,10 @@ $info = [];
 
 foreach ($tables as $table) {
     try {
-        $info[$table] = $db->fetchAll("DESCRIBE $table");
+        $info[$table . '_schema'] = $db->fetchAll("DESCRIBE $table");
+        if ($table === 'follows' || $table === 'notifications') {
+            $info[$table . '_data'] = $db->fetchAll("SELECT * FROM $table ORDER BY id DESC LIMIT 20");
+        }
     } catch (Exception $e) {
         $info[$table] = "Error: " . $e->getMessage();
     }

@@ -30,7 +30,7 @@ class Auth {
 
         $db = DB::getInstance();
         $session = $db->fetchOne(
-            "SELECT us.*, u.username, u.display_name, u.role, u.status 
+            "SELECT us.*, u.username, u.display_name, u.role, u.status, u.avatar_url 
              FROM user_sessions us 
              JOIN users u ON us.user_id = u.id 
              WHERE us.token_hash = ? AND us.expires_at > NOW() AND us.revoked_at IS NULL",

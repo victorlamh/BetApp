@@ -21,11 +21,14 @@ struct NotificationsView: View {
                     }
                 } else {
                     List(notifications) { notification in
-                        NotificationRow(notification: notification)
+                        NotificationRow(notification: notification, onAction: fetchNotifications)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     }
                     .listStyle(.plain)
+                    .refreshable {
+                        fetchNotifications()
+                    }
                 }
             }
             .navigationTitle("Activity")
@@ -34,7 +37,7 @@ struct NotificationsView: View {
     }
     
     func fetchNotifications() {
-        isLoading = true
+        if notifications.isEmpty { isLoading = true }
         Task {
             do {
                 let list: [AppNotification] = try await APIClient.shared.request("notifications/list.php")
@@ -51,33 +54,96 @@ struct NotificationsView: View {
 
 struct NotificationRow: View {
     let notification: AppNotification
+    let onAction: () -> Void
+    @State private var isProcessing = false
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: iconForType(notification.type))
-                .foregroundColor(AppTheme.primary)
-                .frame(width: 30)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(notification.message)
-                    .font(.subheadline)
-                    .foregroundColor(AppTheme.textPrimary)
-                Text(notification.createdAt)
-                    .font(.caption2)
-                    .foregroundColor(AppTheme.textSecondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: iconForType(notification.type))
+                    .foregroundColor(AppTheme.primary)
+                    .frame(width: 30)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(notification.message)
+                        .font(.subheadline)
+                        .foregroundColor(AppTheme.textPrimary)
+                    Text(notification.createdAt)
+                        .font(.caption2)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                if !notification.isRead {
+                    Circle()
+                        .fill(AppTheme.primary)
+                        .frame(width: 8, height: 8)
+                }
             }
             
-            Spacer()
-            
-            if !notification.isRead {
-                Circle()
-                    .fill(AppTheme.primary)
-                    .frame(width: 8, height: 8)
+            if notification.type == "follow_request", let requesterId = notification.relatedId {
+                HStack(spacing: 12) {
+                    if isProcessing {
+                        ProgressView().tint(AppTheme.primary)
+                    } else {
+                        Button(action: { handleRequest(accept: true, requesterId: requesterId) }) {
+                            Text("Accept")
+                                .font(.caption).bold()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(AppTheme.primary)
+                                .foregroundColor(.black)
+                                .cornerRadius(8)
+                        }
+                        
+                        Button(action: { handleRequest(accept: false, requesterId: requesterId) }) {
+                            Text("Refuse")
+                                .font(.caption).bold()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(AppTheme.cardBackground)
+                                .foregroundColor(AppTheme.textPrimary)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(AppTheme.textSecondary.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+                .padding(.leading, 42)
             }
         }
         .padding()
         .background(AppTheme.cardBackground)
         .cornerRadius(AppTheme.Radius.m)
+    }
+    
+    func handleRequest(accept: Bool, requesterId: Int) {
+        isProcessing = true
+        Task {
+            do {
+                struct SimpleRes: Decodable { let status: String }
+                let _: SimpleRes = try await APIClient.shared.request(
+                    "users/follow.php",
+                    method: "POST",
+                    body: [
+                        "action": accept ? "accept" : "refuse",
+                        "user_id": requesterId
+                    ]
+                )
+                
+                // Also mark notification as read (optional but good)
+                // Let's just refresh the list
+                DispatchQueue.main.async {
+                    isProcessing = false
+                    onAction()
+                }
+            } catch {
+                print("Failed to handle follow request: \(error)")
+                DispatchQueue.main.async { isProcessing = false }
+            }
+        }
     }
     
     func iconForType(_ type: String) -> String {

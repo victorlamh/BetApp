@@ -2,7 +2,8 @@ import SwiftUI
 
 struct AdminView: View {
     @ObservedObject var authStore = AuthStore.shared
-    @State private var pendingBets: [Bet] = []
+    @State private var bets: [Bet] = []
+    @State private var selectedTab = 0 // 0: Pending, 1: Live
     @State private var isLoading = false
     @State private var errorMessage: String = ""
     
@@ -18,9 +19,17 @@ struct AdminView: View {
                     }
                 } else {
                     VStack(spacing: 0) {
+                        Picker("Status", selection: $selectedTab) {
+                            Text("Pending").tag(0)
+                            Text("Live").tag(1)
+                        }
+                        .pickerStyle(.segmented)
+                        .padding()
+                        .background(AppTheme.background)
+                        
                         // Status bar
                         HStack {
-                            Text("Pending: \(pendingBets.count)")
+                            Text("\(selectedTab == 0 ? "Pending" : "Live"): \(bets.count)")
                             Spacer()
                             if !errorMessage.isEmpty {
                                 Text(errorMessage).foregroundColor(errorMessage.contains("✅") ? .green : .red)
@@ -35,48 +44,54 @@ struct AdminView: View {
                             Spacer()
                             ProgressView("Loading...").tint(AppTheme.primary)
                             Spacer()
-                        } else if pendingBets.isEmpty {
+                        } else if bets.isEmpty {
                             Spacer()
-                            Text("No pending bets").foregroundColor(AppTheme.textSecondary)
+                            Text("No \(selectedTab == 0 ? "pending" : "live") bets").foregroundColor(AppTheme.textSecondary)
                             Spacer()
                         } else {
-                            List(pendingBets) { bet in
-                                AdminBetCard(bet: bet, onAction: fetchPendingBets)
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                                    .padding(.vertical, 4)
+                            List(bets) { bet in
+                                if selectedTab == 0 {
+                                    AdminBetCard(bet: bet, onAction: fetchBets)
+                                } else {
+                                    AdminLiveBetCard(bet: bet, onAction: fetchBets)
+                                }
                             }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .padding(.vertical, 4)
                             .listStyle(.plain)
                         }
                     }
                 }
             }
             .navigationTitle("Admin Panel")
+            .onChange(of: selectedTab) { _ in fetchBets() }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: fetchPendingBets) {
+                    Button(action: fetchBets) {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
             }
             .onAppear {
                 if authStore.currentUser?.role == "admin" {
-                    fetchPendingBets()
+                    fetchBets()
                 }
             }
         }
     }
     
-    func fetchPendingBets() {
+    func fetchBets() {
         isLoading = true
         errorMessage = ""
+        let status = selectedTab == 0 ? "pending_review" : "live"
         Task {
             do {
-                let bets: [Bet] = try await APIClient.shared.request("bets/list.php?status=pending_review")
+                let fetched: [Bet] = try await APIClient.shared.request("bets/list.php?status=\(status)")
                 DispatchQueue.main.async {
-                    self.pendingBets = bets
+                    self.bets = fetched
                     self.isLoading = false
-                    self.errorMessage = bets.isEmpty ? "" : "✅ \(bets.count) bets loaded"
+                    self.errorMessage = fetched.isEmpty ? "" : "✅ \(fetched.count) bets loaded"
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -187,6 +202,125 @@ struct AdminBetCard: View {
             } catch {
                 DispatchQueue.main.async {
                     generator.notificationOccurred(.error)
+                    self.resultText = "Failed: \(error)"
+                    self.isProcessing = false
+                }
+            }
+        }
+    }
+}
+
+struct AdminLiveBetCard: View {
+    let bet: Bet
+    let onAction: () -> Void
+    @State private var isProcessing = false
+    @State private var resultText: String = ""
+    @State private var showingConfirmation = false
+    @State private var isDeleteAction = true
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(bet.title)
+                        .font(.headline)
+                        .foregroundColor(AppTheme.textPrimary)
+                    Text("By: \(bet.creatorName)")
+                        .font(.caption)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                Spacer()
+                Text("LIVE")
+                    .font(.caption2)
+                    .bold()
+                    .padding(4)
+                    .background(AppTheme.oddsUp.opacity(0.2))
+                    .foregroundColor(AppTheme.oddsUp)
+                    .cornerRadius(4)
+            }
+            
+            if !resultText.isEmpty {
+                Text(resultText)
+                    .font(.caption)
+                    .foregroundColor(resultText.hasPrefix("✅") ? .green : .red)
+            }
+            
+            if !isProcessing {
+                HStack(spacing: 12) {
+                    Button {
+                        isDeleteAction = true
+                        showingConfirmation = true
+                    } label: {
+                        Label("Delete", systemImage: "trash.fill")
+                            .font(.caption)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Color.red.opacity(0.2))
+                            .foregroundColor(.red)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button {
+                        isDeleteAction = false
+                        showingConfirmation = true
+                    } label: {
+                        Label("Void", systemImage: "slash.circle")
+                            .font(.caption)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Color.orange.opacity(0.2))
+                            .foregroundColor(.orange)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            } else {
+                ProgressView().tint(AppTheme.primary)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(10)
+        .confirmationDialog(
+            isDeleteAction ? "Delete this bet? (All users refunded)" : "Void this bet? (Mark as canceled, users refunded)",
+            isPresented: $showingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(isDeleteAction ? "Delete & Refund" : "Void & Refund", role: .destructive) {
+                performAction(action: isDeleteAction ? "delete" : "void")
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+    
+    func performAction(action: String) {
+        guard !isProcessing else { return }
+        isProcessing = true
+        resultText = ""
+        
+        Task {
+            do {
+                struct SimpleResponse: Decodable { let status: String }
+                let _: SimpleResponse = try await APIClient.shared.request(
+                    "admin/manage_bet.php",
+                    method: "POST",
+                    body: [
+                        "bet_id": bet.id,
+                        "action": action,
+                        "reason": "Admin action via iOS"
+                    ]
+                )
+                DispatchQueue.main.async {
+                    self.resultText = "✅ Success!"
+                    self.isProcessing = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        onAction()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
                     self.resultText = "Failed: \(error)"
                     self.isProcessing = false
                 }

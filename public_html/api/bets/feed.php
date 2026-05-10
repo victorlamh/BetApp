@@ -43,13 +43,16 @@ foreach ($bets as &$bet) {
     $bet['proof_required'] = (int)$bet['proof_required'];
     
     $bet['outcomes'] = $db->fetchAll(
-        "SELECT id, label, coefficient FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order",
+        "SELECT id, label, initial_coefficient, total_wagered FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order",
         [$bet['id']]
     );
     
+    // Apply dynamic odds
+    $bet['outcomes'] = Odds::calculate($bet['id'], $bet['outcomes']);
+    
     foreach ($bet['outcomes'] as &$outcome) {
         $outcome['id'] = (int)$outcome['id'];
-        $outcome['coefficient'] = (float)$outcome['coefficient'];
+        // coefficient is already set as float by Odds::calculate
     }
     
     // Check if user has a wager

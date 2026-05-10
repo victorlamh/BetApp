@@ -56,23 +56,45 @@ struct WagerSlipView: View {
                     }
                     
                     // Summary
-                    HStack {
-                        Text("Potential Return")
-                            .foregroundColor(AppTheme.textSecondary)
-                        Spacer()
-                        Text("\(String(format: "%.2f", potentialReturn))€")
-                            .font(.headline)
-                            .foregroundColor(AppTheme.accent)
+                    VStack(spacing: AppTheme.Spacing.m) {
+                        HStack {
+                            Text("Potential Return")
+                                .foregroundColor(AppTheme.textSecondary)
+                            Spacer()
+                            Text("\(String(format: "%.2f", potentialReturn))€")
+                                .font(.title2)
+                                .bold()
+                                .foregroundColor(AppTheme.oddsUp)
+                        }
+                        
+                        Divider().background(AppTheme.textSecondary.opacity(0.2))
+                        
+                        HStack {
+                            Text("Your Stake")
+                                .foregroundColor(AppTheme.textSecondary)
+                            Spacer()
+                            Text("\(stake)€")
+                                .foregroundColor(AppTheme.textPrimary)
+                        }
                     }
                     .padding()
                     .background(AppTheme.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.m)
+                            .stroke(AppTheme.oddsUp.opacity(0.3), lineWidth: 1)
+                    )
                     .cornerRadius(AppTheme.Radius.m)
                     
                     if let error = errorMessage {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(AppTheme.danger)
-                            .multilineTextAlignment(.center)
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                            Text(error)
+                        }
+                        .font(.caption)
+                        .foregroundColor(AppTheme.oddsDown)
+                        .padding()
+                        .background(AppTheme.oddsDown.opacity(0.1))
+                        .cornerRadius(AppTheme.Radius.s)
                     }
                     
                     Spacer()

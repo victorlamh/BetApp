@@ -20,9 +20,11 @@ $bet = $db->fetchOne(
 if (!$bet) Response::notFound("Bet not found");
 
 $bet['outcomes'] = $db->fetchAll(
-    "SELECT id, label, coefficient FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order",
+    "SELECT id, label, initial_coefficient, total_wagered FROM bet_outcomes WHERE bet_id = ? ORDER BY sort_order",
     [$betId]
 );
+
+$bet['outcomes'] = Odds::calculate($betId, $bet['outcomes']);
 
 $bet['my_wager'] = $db->fetchOne(
     "SELECT * FROM wagers WHERE bet_id = ? AND user_id = ?",

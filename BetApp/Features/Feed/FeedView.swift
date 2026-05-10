@@ -169,13 +169,15 @@ struct BetCard: View {
                 ForEach(bet.outcomes?.prefix(2) ?? []) { outcome in
                     HStack {
                         Text(outcome.label)
+                            .lineLimit(1)
                         Spacer()
                         Text(String(format: "%.2f", outcome.coefficient))
                             .bold()
+                            .foregroundColor(AppTheme.oddsUp)
                     }
-                    .font(.caption)
+                    .font(.caption2)
                     .padding(8)
-                    .background(AppTheme.secondary)
+                    .background(AppTheme.secondary.opacity(0.5))
                     .cornerRadius(AppTheme.Radius.s)
                 }
             }

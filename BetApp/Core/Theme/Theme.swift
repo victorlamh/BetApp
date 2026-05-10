@@ -7,6 +7,8 @@ struct AppTheme {
     static let secondary = Color(hex: "2D2D35")
     static let accent = Color(hex: "00C853") // Success Green
     static let danger = Color(hex: "FF5252") // Error Red
+    static let oddsUp = Color(hex: "32D74B") // Neon Green
+    static let oddsDown = Color(hex: "FF453A") // Neon Red
     static let textPrimary = Color.white
     static let textSecondary = Color(hex: "A0A0AB")
     

@@ -9,6 +9,7 @@ require_once __DIR__ . '/core/db.php';
 require_once __DIR__ . '/core/response.php';
 require_once __DIR__ . '/core/auth.php';
 require_once __DIR__ . '/core/validator.php';
+require_once __DIR__ . '/core/odds.php';
 require_once __DIR__ . '/core/security.php';
 require_once __DIR__ . '/core/moderation.php';
 

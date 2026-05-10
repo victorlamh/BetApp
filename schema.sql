@@ -111,7 +111,8 @@ CREATE TABLE IF NOT EXISTS bet_outcomes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     bet_id INT NOT NULL,
     label VARCHAR(255) NOT NULL,
-    coefficient DECIMAL(10, 2) NOT NULL,
+    initial_coefficient DECIMAL(10, 2) NOT NULL,
+    total_wagered DECIMAL(15, 2) DEFAULT 0.00,
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE

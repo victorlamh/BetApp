@@ -5,6 +5,7 @@ struct ProfileView: View {
     @State private var followersCount = 0
     @State private var followingCount = 0
     @State private var walletBalance: Double = 0.0
+    @State private var statPoints: [StatPoint] = []
     @State private var isLoading = true
     
     var body: some View {
@@ -17,16 +18,6 @@ struct ProfileView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: AppTheme.Spacing.xl) {
-                            // DEBUG SECTION
-                            HStack {
-                                Text("DEBUG - ID: \(authStore.currentUser?.id ?? 0)")
-                                Spacer()
-                                Text("ROLE: \(authStore.currentUser?.role ?? "NULL")")
-                            }
-                            .font(.caption.monospaced())
-                            .padding(8)
-                            .background(Color.yellow.opacity(0.2))
-                            .foregroundColor(.yellow)
                             
                             // Header: Avatar & Info
                             VStack(spacing: AppTheme.Spacing.m) {
@@ -60,9 +51,15 @@ struct ProfileView: View {
                             .background(AppTheme.cardBackground)
                             .cornerRadius(AppTheme.Radius.m)
                             
+                            // Performance Graph
+                            StatsGraphView(points: statPoints)
+                                .padding(.horizontal)
+                            
                             // Actions section
                             VStack(spacing: AppTheme.Spacing.m) {
-                                ProfileButton(label: "Edit Profile", icon: "pencil")
+                                NavigationLink(destination: MyBetsView()) {
+                                    ProfileButton(label: "My Bets", icon: "ticket.fill")
+                                }
                                 ProfileButton(label: "Wallet History", icon: "list.bullet.rectangle")
                                 ProfileButton(label: "Security", icon: "lock.shield")
                                 
@@ -75,15 +72,6 @@ struct ProfileView: View {
                                         .cornerRadius(AppTheme.Radius.m)
                                 }
                             }
-                            
-                            // Debug Info (Hidden in production)
-                            VStack(spacing: 4) {
-                                Text("User ID: \(authStore.currentUser?.id ?? 0)")
-                                Text("Role: \(authStore.currentUser?.role ?? "unknown")")
-                            }
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(AppTheme.textSecondary.opacity(0.5))
-                            .padding(.top, 40)
                         }
                         .padding()
                     }
@@ -112,10 +100,16 @@ struct ProfileView: View {
                     self.followersCount = res.stats.followersCount
                     self.followingCount = res.stats.followingCount
                     self.walletBalance = res.stats.walletBalance
+                }
+                
+                // Fetch Graph Data
+                let graphData: [StatPoint] = try await APIClient.shared.request("users/stats.php")
+                DispatchQueue.main.async {
+                    self.statPoints = graphData
                     self.isLoading = false
                 }
             } catch {
-                print("Failed to fetch profile: \(error)")
+                print("Failed to fetch profile/stats: \(error)")
                 DispatchQueue.main.async { self.isLoading = false }
             }
         }

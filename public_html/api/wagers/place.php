@@ -36,11 +36,23 @@ try {
         throw new Exception("Bet is closed for wagering");
     }
 
-    // 3. Verify outcome
-    $outcome = $db->fetchOne("SELECT coefficient FROM bet_outcomes WHERE id = ? AND bet_id = ?", [$outcomeId, $betId]);
-    if (!$outcome) {
+    // 3. Verify outcomes and calculate dynamic odds for locking
+    $outcomes = $db->fetchAll("SELECT id, initial_coefficient, total_wagered FROM bet_outcomes WHERE bet_id = ? FOR UPDATE", [$betId]);
+    $dynamicOutcomes = Odds::calculate($betId, $outcomes);
+    
+    $targetOutcome = null;
+    foreach ($dynamicOutcomes as $do) {
+        if ($do['id'] == $outcomeId) {
+            $targetOutcome = $do;
+            break;
+        }
+    }
+    
+    if (!$targetOutcome) {
         throw new Exception("Invalid outcome");
     }
+    
+    $currentCoeff = $targetOutcome['coefficient'];
 
     // 4. Check if already wagered
     $existing = $db->fetchOne("SELECT id FROM wagers WHERE bet_id = ? AND user_id = ?", [$betId, $userId]);
@@ -59,13 +71,16 @@ try {
         [$userId, -$stake, $wallet['balance'], $newBalance, $betId, "Wager on bet #$betId"]
     );
 
-    // 7. Insert Wager
-    $potentialReturn = $stake * $outcome['coefficient'];
+    // 7. Insert Wager (using locked current dynamic coefficient)
+    $potentialReturn = $stake * $currentCoeff;
     $db->query(
         "INSERT INTO wagers (bet_id, user_id, outcome_id, stake, locked_coefficient, potential_return) 
          VALUES (?, ?, ?, ?, ?, ?)",
-        [$betId, $userId, $outcomeId, $stake, $outcome['coefficient'], $potentialReturn]
+        [$betId, $userId, $outcomeId, $stake, $currentCoeff, $potentialReturn]
     );
+
+    // 8. Update outcome pool for future bets
+    $db->query("UPDATE bet_outcomes SET total_wagered = total_wagered + ? WHERE id = ?", [$stake, $outcomeId]);
 
     $db->commit();
     Response::success([

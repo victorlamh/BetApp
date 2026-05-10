@@ -99,15 +99,22 @@ struct BetDetailView: View {
                 }) {
                     HStack {
                         Text(outcome.label)
+                            .foregroundColor(AppTheme.textPrimary)
                         Spacer()
                         Text(String(format: "%.2f", outcome.coefficient))
+                            .font(.system(.title3, design: .monospaced))
                             .bold()
+                            .foregroundColor(selectedOutcome?.id == outcome.id ? .black : AppTheme.oddsUp)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(selectedOutcome?.id == outcome.id ? AppTheme.oddsUp : AppTheme.oddsUp.opacity(0.1))
+                            .cornerRadius(4)
                     }
                     .padding()
-                    .background(selectedOutcome?.id == outcome.id ? AppTheme.primary.opacity(0.1) : AppTheme.cardBackground)
+                    .background(AppTheme.cardBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                            .stroke(selectedOutcome?.id == outcome.id ? AppTheme.primary : Color.clear, lineWidth: 2)
+                            .stroke(selectedOutcome?.id == outcome.id ? AppTheme.oddsUp : Color.clear, lineWidth: 2)
                     )
                     .cornerRadius(AppTheme.Radius.m)
                 }

@@ -3,6 +3,7 @@
 class DB {
     private static $instance = null;
     private $pdo;
+    private $lastStmt;
 
     private function __construct() {
         $config = require __DIR__ . '/../config/env.php';
@@ -34,9 +35,9 @@ class DB {
     }
 
     public function query($sql, $params = []) {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt;
+        $this->lastStmt = $this->pdo->prepare($sql);
+        $this->lastStmt->execute($params);
+        return $this->lastStmt;
     }
 
     public function fetchAll($sql, $params = []) {
@@ -61,5 +62,9 @@ class DB {
 
     public function rollBack() {
         return $this->pdo->rollBack();
+    }
+
+    public function rowCount() {
+        return $this->lastStmt ? $this->lastStmt->rowCount() : 0;
     }
 }

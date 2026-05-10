@@ -47,6 +47,7 @@ $filename = 'user_' . $userId . '_' . time() . '.' . $extension;
 $uploadPath = $uploadDir . $filename;
 
 if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+    chmod($uploadPath, 0644); // Ensure file is readable
     $db = DB::getInstance();
     $avatarUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/uploads/avatars/' . $filename;
     
@@ -56,6 +57,7 @@ if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
     
     Response::success(['avatar_url' => $avatarUrl], "Profile picture updated");
 } else {
-    file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] update_avatar ERROR: move_uploaded_file failed to $uploadPath\n", FILE_APPEND);
+    $error = error_get_last();
+    file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] update_avatar ERROR: move_uploaded_file failed. Path: $uploadPath. Error: " . ($error['message'] ?? 'Unknown') . "\n", FILE_APPEND);
     Response::error("Failed to save uploaded file");
 }

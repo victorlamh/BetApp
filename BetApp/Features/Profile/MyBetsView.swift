@@ -139,11 +139,11 @@ struct WagerHistoryCard: View {
             }
         }
         .padding()
-        .background(AppTheme.cardBackground)
+        .background(AppTheme.cardBackground) // Slightly lighter than pure black to see the card
         .cornerRadius(AppTheme.Radius.m)
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                .stroke(wager.status == "active" ? AppTheme.primary : AppTheme.textSecondary.opacity(0.4), lineWidth: 2)
+                .stroke(AppTheme.primary.opacity(0.8), lineWidth: 1.5) // Strong gold border for all
         )
     }
 }

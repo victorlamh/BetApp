@@ -18,17 +18,24 @@ $sql = "SELECT id, username, display_name, avatar_url,
         WHERE id != ? 
         AND status = 'active'";
 
-if ($query === '*all') {
-    $users = $db->fetchAll($sql . " LIMIT 100", [$currentUserId, $currentUserId]);
-} else {
-    $users = $db->fetchAll(
-        $sql . " AND (username LIKE ? OR display_name LIKE ?) LIMIT 20",
-        [$currentUserId, $currentUserId, "%$query%", "%$query%"]
-    );
-}
+try {
+    if ($query === '*all') {
+        $users = $db->fetchAll($sql . " LIMIT 100", [$currentUserId, $currentUserId]);
+    } else {
+        $users = $db->fetchAll(
+            $sql . " AND (username LIKE ? OR display_name LIKE ?) LIMIT 20",
+            [$currentUserId, $currentUserId, "%$query%", "%$query%"]
+        );
+    }
 
-foreach ($users as &$user) {
-    $user['id'] = (int)$user['id'];
-}
+    file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] search_users: query='$query' userId=$currentUserId found=" . count($users) . "\n", FILE_APPEND);
 
-Response::success($users);
+    foreach ($users as &$user) {
+        $user['id'] = (int)$user['id'];
+    }
+
+    Response::success($users);
+} catch (Exception $e) {
+    file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] search_users ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
+    Response::error($e->getMessage(), 500);
+}

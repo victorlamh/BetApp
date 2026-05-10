@@ -36,29 +36,39 @@ switch ($action) {
         break;
 
     case 'accept':
+        // Check current status
+        $existing = $db->fetchOne(
+            "SELECT status FROM follows WHERE follower_id = ? AND followed_id = ?",
+            [$targetId, $currentUserId]
+        );
+        
+        if (!$existing) {
+            Response::error("No follow request found from this user");
+        }
+        
+        if ($existing['status'] === 'accepted') {
+            Response::success((object)[], "Follow request already accepted");
+        }
+
         $db->query(
-            "UPDATE follows SET status = 'accepted' WHERE follower_id = ? AND followed_id = ?",
+            "UPDATE follows SET status = 'accepted' WHERE follower_id = ? AND followed_id = ? AND status = 'pending'",
             [$targetId, $currentUserId]
         );
         
         $count = $db->rowCount();
         file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php ACCEPT: affected=$count targetId=$targetId currentUserId=$currentUserId\n", FILE_APPEND);
         
-        if ($count > 0) {
-            // Notify requester
-            $db->query(
-                "INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'follow_accepted', ?, ?)",
-                [$targetId, Auth::user()['username'] . " accepted your follow request", $currentUserId]
-            );
-            Response::success((object)[], "Follow request accepted");
-        } else {
-            Response::error("No pending request found");
-        }
+        // Notify requester (always try to send if we reached here, or skip if already accepted)
+        $db->query(
+            "INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'follow_accepted', ?, ?)",
+            [$targetId, Auth::user()['username'] . " accepted your follow request", $currentUserId]
+        );
+        Response::success((object)[], "Follow request accepted");
         break;
 
     case 'refuse':
         $db->query(
-            "DELETE FROM follows WHERE follower_id = ? AND followed_id = ? AND status = 'pending'",
+            "DELETE FROM follows WHERE follower_id = ? AND followed_id = ?",
             [$targetId, $currentUserId]
         );
         $count = $db->rowCount();

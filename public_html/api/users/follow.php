@@ -13,6 +13,8 @@ if (!$targetId) {
 $db = DB::getInstance();
 $currentUserId = Auth::userId();
 
+file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php: userId=$currentUserId action=$action targetId=$targetId\n", FILE_APPEND);
+
 switch ($action) {
     case 'request':
         try {
@@ -27,7 +29,7 @@ switch ($action) {
                 [$targetId, "New follow request from " . Auth::user()['username'], $currentUserId]
             );
             
-            Response::success(null, "Follow request sent");
+            Response::success((object)[], "Follow request sent");
         } catch (Exception $e) {
             Response::error("Already following or request pending");
         }
@@ -39,13 +41,16 @@ switch ($action) {
             [$targetId, $currentUserId]
         );
         
-        if ($db->rowCount() > 0) {
+        $count = $db->rowCount();
+        file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php ACCEPT: affected=$count targetId=$targetId currentUserId=$currentUserId\n", FILE_APPEND);
+        
+        if ($count > 0) {
             // Notify requester
             $db->query(
                 "INSERT INTO notifications (user_id, type, message, related_id) VALUES (?, 'follow_accepted', ?, ?)",
                 [$targetId, Auth::user()['username'] . " accepted your follow request", $currentUserId]
             );
-            Response::success(null, "Follow request accepted");
+            Response::success((object)[], "Follow request accepted");
         } else {
             Response::error("No pending request found");
         }
@@ -56,7 +61,9 @@ switch ($action) {
             "DELETE FROM follows WHERE follower_id = ? AND followed_id = ? AND status = 'pending'",
             [$targetId, $currentUserId]
         );
-        Response::success(null, "Request refused");
+        $count = $db->rowCount();
+        file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] follow.php REFUSE: affected=$count targetId=$targetId currentUserId=$currentUserId\n", FILE_APPEND);
+        Response::success((object)[], "Request refused");
         break;
 
     case 'unfollow':
@@ -64,7 +71,7 @@ switch ($action) {
             "DELETE FROM follows WHERE follower_id = ? AND followed_id = ?",
             [$currentUserId, $targetId]
         );
-        Response::success(null, "Unfollowed user");
+        Response::success((object)[], "Unfollowed user");
         break;
 
     default:

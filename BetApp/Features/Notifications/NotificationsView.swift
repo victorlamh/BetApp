@@ -121,6 +121,22 @@ struct NotificationRow: View {
                                 )
                         }
                         .buttonStyle(BorderlessButtonStyle())
+                        
+                        if notification.isFollowingBack == false {
+                            Button(action: { followBack(userId: requesterId) }) {
+                                Text("Follow Back")
+                                    .font(.caption).bold()
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(AppTheme.cardBackground)
+                                    .foregroundColor(AppTheme.primary)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(AppTheme.primary.opacity(0.5), lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
                     }
                 }
                 .padding(.leading, 42)
@@ -133,6 +149,32 @@ struct NotificationRow: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(alertMessage)
+        }
+    }
+    
+    func followBack(userId: Int) {
+        isProcessing = true
+        Task {
+            do {
+                struct EmptyResponse: Decodable {}
+                let _: EmptyResponse = try await APIClient.shared.request(
+                    "users/follow.php",
+                    method: "POST",
+                    body: ["action": "request", "user_id": userId]
+                )
+                DispatchQueue.main.async {
+                    isProcessing = false
+                    // No need to remove local here, but maybe refresh?
+                    onAction()
+                }
+            } catch {
+                print("Failed to follow back: \(error)")
+                DispatchQueue.main.async {
+                    self.alertMessage = error.localizedDescription
+                    self.showAlert = true
+                    self.isProcessing = false
+                }
+            }
         }
     }
     
@@ -187,6 +229,7 @@ struct AppNotification: Codable, Identifiable {
     let type: String
     let message: String
     let relatedId: Int?
+    let isFollowingBack: Bool?
     let isRead: Bool
     let createdAt: String
 }

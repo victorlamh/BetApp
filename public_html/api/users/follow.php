@@ -44,7 +44,7 @@ switch ($action) {
         );
         
         if (!$existing) {
-            Response::error("No follow request found from this user");
+            Response::error("No follow request found from user ID $targetId to you (ID $currentUserId)");
         }
         
         if ($existing['status'] === 'accepted') {

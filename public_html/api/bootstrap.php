@@ -2,8 +2,9 @@
 // API Bootstrap
 
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Hide errors in production
-ob_start(); // Start output buffering to catch accidental output
+ini_set('display_errors', 0);
+date_default_timezone_set('UTC');
+ob_start();
 
 require_once __DIR__ . '/core/db.php';
 require_once __DIR__ . '/core/response.php';

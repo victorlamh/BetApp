@@ -40,7 +40,7 @@ struct BetDetailView: View {
                 ProgressView().tint(AppTheme.primary)
             }
             
-            if let bet = viewModel.bet, bet.status == "live", bet.myWager == nil {
+            if let bet = viewModel.bet, bet.status == "live", bet.closeDate > Date(), bet.myWager == nil {
                 wagerButton
             }
         }
@@ -129,7 +129,7 @@ struct BetDetailView: View {
                     .cornerRadius(AppTheme.Radius.m)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(bet.status != "live" || bet.myWager != nil)
+                .disabled(bet.status != "live" || bet.closeDate <= Date() || bet.myWager != nil)
             }
         }
     }

@@ -7,6 +7,9 @@ $scope = $_GET['scope'] ?? 'global'; // global, friends, mine
 $userId = Auth::userId();
 $db = DB::getInstance();
 
+$user = Auth::user();
+$isAdmin = ($user['role'] === 'admin' || $user['role'] === 'moderator');
+
 $sql = "SELECT b.*, u.display_name as creator_name, b.creator_user_id as creator_id 
         FROM bets b 
         JOIN users u ON b.creator_user_id = u.id 
@@ -15,17 +18,14 @@ $sql = "SELECT b.*, u.display_name as creator_name, b.creator_user_id as creator
 $params = [];
 
 if ($scope === 'mine') {
-    $sql = "SELECT b.*, u.display_name as creator_name, b.creator_user_id as creator_id 
-            FROM bets b 
-            JOIN users u ON b.creator_user_id = u.id 
-            WHERE b.creator_user_id = ?";
+    $sql .= " AND b.creator_user_id = ?";
     $params = [$userId];
-} elseif ($scope === 'friends') {
-    $sql .= " AND (b.creator_user_id IN (SELECT addressee_id FROM friendships WHERE requester_id = ? AND status = 'accepted')
-              OR b.creator_user_id IN (SELECT requester_id FROM friendships WHERE addressee_id = ? AND status = 'accepted'))";
-    $params = [$userId, $userId];
+} elseif ($isAdmin) {
+    // Admins see everything in global scope, no extra filters
 } else {
-    // Global scope - already handled by the base WHERE clause
+    // Classic user: only see bets from people they follow (accepted) or themselves
+    $sql .= " AND (b.creator_user_id = ? OR b.creator_user_id IN (SELECT followed_id FROM follows WHERE follower_id = ? AND status = 'accepted'))";
+    $params = [$userId, $userId];
 }
 
 $sql .= " ORDER BY b.created_at DESC LIMIT 50";

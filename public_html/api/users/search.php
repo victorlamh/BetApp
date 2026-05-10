@@ -18,7 +18,7 @@ $sql = "SELECT id, username, display_name, avatar_url,
         WHERE id != ? 
         AND status = 'active'";
 
-if ($query === '@all') {
+if ($query === '*all') {
     $users = $db->fetchAll($sql . " LIMIT 100", [$currentUserId, $currentUserId]);
 } else {
     $users = $db->fetchAll(
@@ -26,6 +26,9 @@ if ($query === '@all') {
         [$currentUserId, $currentUserId, "%$query%", "%$query%"]
     );
 }
+
+// DEBUG: Log found count
+file_put_contents(__DIR__ . '/../../debug_log.txt', "[" . date('Y-m-d H:i:s') . "] Search for '$query' found " . count($users) . " results.\n", FILE_APPEND);
 
 // Format numeric IDs
 foreach ($users as &$user) {

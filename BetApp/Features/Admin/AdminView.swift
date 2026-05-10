@@ -12,24 +12,26 @@ struct AdminView: View {
             ZStack {
                 AppTheme.background.ignoresSafeArea()
                 
-                if authStore.currentUser?.role != "admin" {
+                if authStore.currentUser?.role != "admin" && authStore.currentUser?.role != "moderator" {
                     VStack {
                         Image(systemName: "lock.shield").font(.largeTitle).foregroundColor(AppTheme.textSecondary)
-                        Text("Admin access only").foregroundColor(AppTheme.textSecondary)
+                        Text("Moderator access only").foregroundColor(AppTheme.textSecondary)
                     }
                 } else {
                     VStack(spacing: 0) {
                         Picker("Status", selection: $selectedTab) {
                             Text("Pending").tag(0)
                             Text("Live").tag(1)
+                            Text("To Settle").tag(2)
                         }
                         .pickerStyle(.segmented)
                         .padding()
                         .background(AppTheme.background)
                         
                         // Status bar
+                        let statusText = selectedTab == 0 ? "Pending" : (selectedTab == 1 ? "Live" : "To Settle")
                         HStack {
-                            Text("\(selectedTab == 0 ? "Pending" : "Live"): \(bets.count)")
+                            Text("\(statusText): \(bets.count)")
                             Spacer()
                             if !errorMessage.isEmpty {
                                 Text(errorMessage).foregroundColor(errorMessage.contains("✅") ? .green : .red)
@@ -46,14 +48,16 @@ struct AdminView: View {
                             Spacer()
                         } else if bets.isEmpty {
                             Spacer()
-                            Text("No \(selectedTab == 0 ? "pending" : "live") bets").foregroundColor(AppTheme.textSecondary)
+                            Text("No bets to show").foregroundColor(AppTheme.textSecondary)
                             Spacer()
                         } else {
                             List(bets) { bet in
                                 if selectedTab == 0 {
                                     AdminBetCard(bet: bet, onAction: fetchBets)
-                                } else {
+                                } else if selectedTab == 1 {
                                     AdminLiveBetCard(bet: bet, onAction: fetchBets)
+                                } else {
+                                    AdminSettleCard(bet: bet, onAction: fetchBets)
                                 }
                             }
                             .listRowBackground(Color.clear)
@@ -84,7 +88,14 @@ struct AdminView: View {
     func fetchBets() {
         isLoading = true
         errorMessage = ""
-        let status = selectedTab == 0 ? "pending_review" : "live"
+        let status: String
+        switch selectedTab {
+        case 0: status = "pending_review"
+        case 1: status = "live"
+        case 2: status = "locked,result_proposed,live" // To settle
+        default: status = "live"
+        }
+        
         Task {
             do {
                 let fetched: [Bet] = try await APIClient.shared.request("bets/list.php?status=\(status)")
@@ -316,6 +327,121 @@ struct AdminLiveBetCard: View {
                     self.resultText = "✅ Success!"
                     self.isProcessing = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        onAction()
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.resultText = "Failed: \(error)"
+                    self.isProcessing = false
+                }
+            }
+        }
+    }
+}
+
+struct AdminSettleCard: View {
+    let bet: Bet
+    let onAction: () -> Void
+    @State private var isProcessing = false
+    @State private var resultText: String = ""
+    @State private var showingConfirmation = false
+    @State private var selectedOutcome: BetOutcome?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(bet.title)
+                    .font(.headline)
+                    .foregroundColor(AppTheme.textPrimary)
+                Text("Created by: \(bet.creatorName)")
+                    .font(.caption)
+                    .foregroundColor(AppTheme.textSecondary)
+            }
+            
+            Text("Select Winner:")
+                .font(.caption)
+                .bold()
+                .foregroundColor(AppTheme.primary)
+            
+            ForEach(bet.outcomes ?? []) { outcome in
+                Button {
+                    selectedOutcome = outcome
+                } label: {
+                    HStack {
+                        Text(outcome.label)
+                        Spacer()
+                        if selectedOutcome?.id == outcome.id {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(8)
+                    .background(selectedOutcome?.id == outcome.id ? Color.green.opacity(0.1) : AppTheme.secondary)
+                    .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            if !resultText.isEmpty {
+                Text(resultText)
+                    .font(.caption)
+                    .foregroundColor(resultText.hasPrefix("✅") ? .green : .red)
+            }
+            
+            if !isProcessing {
+                Button {
+                    showingConfirmation = true
+                } label: {
+                    Text("SETTLE BET")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(selectedOutcome == nil ? Color.gray : Color.green)
+                        .foregroundColor(.black)
+                        .cornerRadius(10)
+                }
+                .disabled(selectedOutcome == nil)
+            } else {
+                ProgressView().tint(AppTheme.primary)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(10)
+        .confirmationDialog(
+            "Settle bet with outcome: \(selectedOutcome?.label ?? "")?",
+            isPresented: $showingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Yes, Settle & Payout") {
+                settle()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+    
+    func settle() {
+        guard let outcome = selectedOutcome, !isProcessing else { return }
+        isProcessing = true
+        resultText = ""
+        
+        Task {
+            do {
+                struct SimpleResponse: Decodable { let status: String }
+                let _: SimpleResponse = try await APIClient.shared.request(
+                    "admin/settle_bet.php",
+                    method: "POST",
+                    body: [
+                        "bet_id": bet.id,
+                        "winning_outcome_id": outcome.id
+                    ]
+                )
+                DispatchQueue.main.async {
+                    self.resultText = "✅ Payouts Distributed!"
+                    self.isProcessing = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         onAction()
                     }
                 }

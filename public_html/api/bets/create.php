@@ -42,7 +42,7 @@ try {
 
     foreach ($outcomes as $index => $outcome) {
         $db->query(
-            "INSERT INTO bet_outcomes (bet_id, label, coefficient, sort_order) VALUES (?, ?, ?, ?)",
+            "INSERT INTO bet_outcomes (bet_id, label, initial_coefficient, sort_order) VALUES (?, ?, ?, ?)",
             [$betId, Security::sanitize($outcome['label']), $outcome['coefficient'], $index]
         );
     }

@@ -135,7 +135,10 @@ struct WagerSlipView: View {
         
         Task {
             do {
-                struct WagerResponse: Decodable { let status: String }
+                struct WagerResponse: Decodable {
+                    let newBalance: Double
+                    let potentialReturn: Double
+                }
                 let _: WagerResponse = try await APIClient.shared.request(
                     "wagers/place.php",
                     method: "POST",

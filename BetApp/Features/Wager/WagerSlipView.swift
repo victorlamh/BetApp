@@ -153,8 +153,17 @@ struct WagerSlipView: View {
                 }
             } catch {
                 DispatchQueue.main.async {
-                    isLoading = false
-                    errorMessage = "Failed to place wager. Check your balance."
+                    self.isLoading = false
+                    if let apiError = error as? APIError {
+                        switch apiError {
+                        case .serverError(let msg):
+                            self.errorMessage = msg
+                        default:
+                            self.errorMessage = "Network or server error"
+                        }
+                    } else {
+                        self.errorMessage = error.localizedDescription
+                    }
                 }
             }
         }

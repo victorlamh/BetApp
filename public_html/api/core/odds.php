@@ -21,7 +21,8 @@ class Odds {
             
             // The "virtual" seed for this specific outcome is calculated 
             // so that at zero real bets, the result equals the initial_coefficient.
-            $outcomeSeed = self::SEED_AMOUNT / $initialCoeff;
+            $safeInitialCoeff = $initialCoeff > 0 ? $initialCoeff : 1.0;
+            $outcomeSeed = self::SEED_AMOUNT / $safeInitialCoeff;
             
             $currentCoeff = $totalPool / ($outcomeRealWagered + $outcomeSeed);
             

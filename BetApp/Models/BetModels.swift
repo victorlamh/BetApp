@@ -19,6 +19,13 @@ struct Bet: Codable, Identifiable {
     var statusLabel: String {
         status.replacingOccurrences(of: "_", with: " ").uppercased()
     }
+    
+    var closeDate: Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0) // Assume UTC from DB
+        return formatter.date(from: closeAt) ?? Date()
+    }
 }
 
 struct BetOutcome: Codable, Identifiable {

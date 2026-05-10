@@ -140,18 +140,33 @@ class FeedViewModel: ObservableObject {
 
 struct BetCard: View {
     let bet: Bet
+    @State private var timeRemaining: String = ""
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
             HStack {
-                Text(bet.statusLabel)
-                    .font(.caption2)
-                    .bold()
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(statusColor.opacity(0.2))
-                    .foregroundColor(statusColor)
-                    .cornerRadius(4)
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 6, height: 6)
+                    Text(bet.statusLabel)
+                        .font(.caption2).bold()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(statusColor.opacity(0.1))
+                .foregroundColor(statusColor)
+                .cornerRadius(4)
+                
+                if bet.status == "live" {
+                    Text(timeRemaining)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundColor(timeRemaining.contains("!") ? .orange : AppTheme.textSecondary)
+                        .onReceive(timer) { _ in
+                            updateTimeRemaining()
+                        }
+                }
                 
                 Spacer()
                 
@@ -165,26 +180,53 @@ struct BetCard: View {
                 .foregroundColor(AppTheme.textPrimary)
                 .lineLimit(2)
             
-            HStack {
-                ForEach(bet.outcomes?.prefix(2) ?? []) { outcome in
-                    HStack {
-                        Text(outcome.label)
-                            .lineLimit(1)
-                        Spacer()
-                        Text(String(format: "%.2f", outcome.coefficient))
-                            .bold()
-                            .foregroundColor(AppTheme.oddsUp)
+            HStack(spacing: 12) {
+                if let outcomes = bet.outcomes {
+                    let minCoeff = outcomes.map { $0.coefficient }.min() ?? 0
+                    let maxCoeff = outcomes.map { $0.coefficient }.max() ?? 0
+                    
+                    ForEach(outcomes.prefix(2)) { outcome in
+                        HStack {
+                            Text(outcome.label)
+                                .lineLimit(1)
+                            Spacer()
+                            Text(String(format: "%.2f", outcome.coefficient))
+                                .bold()
+                                .foregroundColor(outcome.coefficient == minCoeff ? AppTheme.oddsUp : (outcome.coefficient == maxCoeff ? AppTheme.oddsDown : AppTheme.primary))
+                        }
+                        .font(.caption)
+                        .padding(10)
+                        .background(AppTheme.secondary.opacity(0.4))
+                        .cornerRadius(AppTheme.Radius.s)
+                        .frame(maxWidth: .infinity)
                     }
-                    .font(.caption2)
-                    .padding(8)
-                    .background(AppTheme.secondary.opacity(0.5))
-                    .cornerRadius(AppTheme.Radius.s)
                 }
             }
         }
         .padding()
         .background(AppTheme.cardBackground)
         .cornerRadius(AppTheme.Radius.m)
+        .onAppear { updateTimeRemaining() }
+    }
+    
+    private func updateTimeRemaining() {
+        let diff = bet.closeDate.timeIntervalSince(Date())
+        if diff <= 0 {
+            timeRemaining = "CLOSED"
+        } else {
+            let hours = Int(diff) / 3600
+            let minutes = (Int(diff) % 3600) / 60
+            let seconds = Int(diff) % 60
+            
+            if hours > 0 {
+                timeRemaining = String(format: "ENDS IN: %02dh %02dm", hours, minutes)
+            } else {
+                timeRemaining = String(format: "ENDS IN: %02d:%02d", minutes, seconds)
+                if minutes < 10 {
+                    timeRemaining += "!"
+                }
+            }
+        }
     }
     
     private var statusColor: Color {

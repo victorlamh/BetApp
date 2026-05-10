@@ -7,6 +7,7 @@ struct WagerSlipView: View {
     
     @Environment(\.dismiss) var dismiss
     @State private var stake: String = "10"
+    @State private var userBalance: Double?
     @State private var isLoading = false
     @State private var errorMessage: String?
     
@@ -40,49 +41,84 @@ struct WagerSlipView: View {
                     .cornerRadius(AppTheme.Radius.m)
                     
                     // Stake Input
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
-                        Text("STAKE AMOUNT (€)")
-                            .font(.caption2)
-                            .foregroundColor(AppTheme.textSecondary)
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
+                        HStack {
+                            Text("STAKE AMOUNT")
+                                .font(.caption).bold()
+                                .foregroundColor(AppTheme.textSecondary)
+                            Spacer()
+                            if let balance = userBalance {
+                                Text("Balance: \(String(format: "%.2f", balance))€")
+                                    .font(.caption)
+                                    .foregroundColor(AppTheme.textSecondary)
+                            }
+                        }
                         
-                        TextField("0.00", text: $stake)
-                            .keyboardType(.decimalPad)
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .foregroundColor(AppTheme.textPrimary)
-                            .multilineTextAlignment(.center)
-                            .padding()
-                            .background(AppTheme.secondary)
-                            .cornerRadius(AppTheme.Radius.m)
+                        HStack {
+                            Text("€")
+                                .font(.title.bold())
+                                .foregroundColor(AppTheme.primary)
+                            TextField("0.00", text: $stake)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(AppTheme.textPrimary)
+                        }
+                        .padding()
+                        .background(AppTheme.secondary)
+                        .cornerRadius(AppTheme.Radius.m)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.m)
+                                .stroke(AppTheme.primary.opacity(0.3), lineWidth: 1)
+                        )
+                        
+                        // Quick Amounts
+                        HStack(spacing: 8) {
+                            ForEach([1, 2, 5, 10], id: \.self) { amount in
+                                Button(action: { stake = "\(amount)" }) {
+                                    Text("\(amount)€")
+                                        .font(.subheadline).bold()
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(stake == "\(amount)" ? AppTheme.primary : AppTheme.secondary)
+                                        .foregroundColor(stake == "\(amount)" ? .black : .white)
+                                        .cornerRadius(8)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            
+                            Button(action: {
+                                if let balance = userBalance {
+                                    stake = String(format: "%.2f", balance)
+                                }
+                            }) {
+                                Text("MAX")
+                                    .font(.subheadline).bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(AppTheme.secondary)
+                                    .foregroundColor(AppTheme.primary)
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppTheme.primary.opacity(0.5), lineWidth: 1))
+                                    .cornerRadius(8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                     
                     // Summary
                     VStack(spacing: AppTheme.Spacing.m) {
                         HStack {
                             Text("Potential Return")
+                                .font(.subheadline)
                                 .foregroundColor(AppTheme.textSecondary)
                             Spacer()
                             Text("\(String(format: "%.2f", potentialReturn))€")
-                                .font(.title2)
+                                .font(.title3)
                                 .bold()
                                 .foregroundColor(AppTheme.oddsUp)
-                        }
-                        
-                        Divider().background(AppTheme.textSecondary.opacity(0.2))
-                        
-                        HStack {
-                            Text("Your Stake")
-                                .foregroundColor(AppTheme.textSecondary)
-                            Spacer()
-                            Text("\(stake)€")
-                                .foregroundColor(AppTheme.textPrimary)
                         }
                     }
                     .padding()
                     .background(AppTheme.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                            .stroke(AppTheme.oddsUp.opacity(0.3), lineWidth: 1)
-                    )
                     .cornerRadius(AppTheme.Radius.m)
                     
                     if let error = errorMessage {
@@ -100,18 +136,22 @@ struct WagerSlipView: View {
                     Spacer()
                     
                     Button(action: placeWager) {
-                        if isLoading {
-                            ProgressView().tint(.black)
-                        } else {
-                            Text("CONFIRM WAGER")
-                                .font(.headline)
-                                .foregroundColor(.black)
+                        ZStack {
+                            if isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("CONFIRM WAGER (\(stake)€)")
+                                    .font(.headline)
+                                    .bold()
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(AppTheme.oddsDown) // Use red-ish for the main button like in image
+                        .cornerRadius(AppTheme.Radius.m)
+                        .shadow(color: AppTheme.oddsDown.opacity(0.3), radius: 10, x: 0, y: 5)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(AppTheme.primary)
-                    .cornerRadius(AppTheme.Radius.m)
                     .disabled(isLoading || (Double(stake) ?? 0) <= 0)
                 }
                 .padding()
@@ -123,6 +163,21 @@ struct WagerSlipView: View {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(AppTheme.textSecondary)
                 }
+            }
+            .onAppear(perform: fetchBalance)
+        }
+    }
+    
+    private func fetchBalance() {
+        Task {
+            do {
+                struct WalletResponse: Decodable { let walletBalance: Double }
+                let res: WalletResponse = try await APIClient.shared.request("auth/me.php")
+                DispatchQueue.main.async {
+                    self.userBalance = res.walletBalance
+                }
+            } catch {
+                print("Failed to fetch balance: \(error)")
             }
         }
     }

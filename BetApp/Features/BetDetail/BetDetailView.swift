@@ -60,17 +60,27 @@ struct BetDetailView: View {
     private func headerSection(_ bet: Bet) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
             HStack {
-                Text(bet.statusLabel)
-                    .font(.caption)
-                    .bold()
-                    .padding(6)
-                    .background(AppTheme.primary.opacity(0.2))
-                    .foregroundColor(AppTheme.primary)
-                    .cornerRadius(4)
+                HStack(spacing: 4) {
+                    Circle().fill(statusColor(bet.status)).frame(width: 6, height: 6)
+                    Text(bet.statusLabel)
+                        .font(.caption).bold()
+                }
+                .padding(6)
+                .background(statusColor(bet.status).opacity(0.1))
+                .foregroundColor(statusColor(bet.status))
+                .cornerRadius(4)
+                
                 Spacer()
-                Text("Ends \(bet.closeAt)")
-                    .font(.caption)
-                    .foregroundColor(AppTheme.textSecondary)
+                
+                if bet.status == "live" {
+                    CountdownText(date: bet.closeDate)
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(AppTheme.textSecondary)
+                } else {
+                    Text("Closed \(bet.closeAt)")
+                        .font(.caption)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
             }
             
             Text(bet.title)
@@ -195,6 +205,17 @@ struct BetDetailView: View {
     }
 }
 
+    private func statusColor(_ status: String) -> Color {
+        switch status {
+        case "live": return AppTheme.accent
+        case "locked": return Color.orange
+        case "settled": return AppTheme.primary
+        case "void": return AppTheme.textSecondary
+        default: return AppTheme.textSecondary
+        }
+    }
+}
+
 class BetDetailViewModel: ObservableObject {
     let betId: Int
     @Published var bet: Bet?
@@ -233,6 +254,34 @@ class BetDetailViewModel: ObservableObject {
             await fetchDetails()
         } catch {
             print("Vote error: \(error)")
+        }
+    }
+}
+
+struct CountdownText: View {
+    let date: Date
+    @State private var text: String = ""
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
+    var body: some View {
+        Text(text)
+            .onAppear(perform: update)
+            .onReceive(timer) { _ in update() }
+    }
+    
+    private func update() {
+        let diff = date.timeIntervalSince(Date())
+        if diff <= 0 {
+            text = "CLOSED"
+        } else {
+            let h = Int(diff) / 3600
+            let m = (Int(diff) % 3600) / 60
+            let s = Int(diff) % 60
+            if h > 0 {
+                text = String(format: "%02dh %02dm", h, m)
+            } else {
+                text = String(format: "%02d:%02d", m, s)
+            }
         }
     }
 }

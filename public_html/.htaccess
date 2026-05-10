@@ -13,9 +13,6 @@ php_value upload_max_filesize 32M
 php_value post_max_size 32M
 php_value memory_limit 128M
 
-# Set JSON as default content type if not specified
-Header set Content-Type "application/json"
-
 # Protect core files
 <FilesMatch "^\.|\.php$|config/|core/">
     Order allow,deny

@@ -208,12 +208,13 @@ struct BetCard: View {
             }
         }
         .padding()
-        .background(Color.black)
+        .background(AppTheme.cardBackground)
         .cornerRadius(AppTheme.Radius.m)
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                .stroke(isLocked ? Color.orange.opacity(0.4) : AppTheme.primary.opacity(0.2), lineWidth: 1.5)
+                .stroke(isLocked ? Color.orange.opacity(0.5) : AppTheme.primary.opacity(0.3), lineWidth: 1.5)
         )
+        .shadow(color: Color.black.opacity(0.8), radius: 10, y: 5)
         .onAppear { updateTimeRemaining() }
     }
     

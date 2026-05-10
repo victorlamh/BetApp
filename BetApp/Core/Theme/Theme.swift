@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct AppTheme {
-    static let background = Color(hex: "0F0F12")
-    static let cardBackground = Color(hex: "1C1C21")
+    static let background = Color.black
+    static let cardBackground = Color(hex: "121214")
     static let primary = Color(hex: "FFCC00") // Warm accent
     static let secondary = Color(hex: "2D2D35")
     static let accent = Color(hex: "00C853") // Success Green

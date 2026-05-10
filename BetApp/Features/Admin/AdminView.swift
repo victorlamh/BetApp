@@ -69,7 +69,7 @@ struct AdminView: View {
                 }
             }
             .navigationTitle("Admin Panel")
-            .onChange(of: selectedTab) { _ in fetchBets() }
+            .onChange(of: selectedTab) { _, _ in fetchBets() }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: fetchBets) {

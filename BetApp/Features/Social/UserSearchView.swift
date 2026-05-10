@@ -18,7 +18,7 @@ struct UserSearchView: View {
                             .foregroundColor(AppTheme.textSecondary)
                         TextField("Search players...", text: $searchText)
                             .foregroundColor(AppTheme.textPrimary)
-                            .onChange(of: searchText) { newValue in
+                            .onChange(of: searchText) { _, newValue in
                                 if newValue.count >= 2 {
                                     searchUsers()
                                 }

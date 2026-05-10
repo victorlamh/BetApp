@@ -1,3 +1,4 @@
+import SwiftUI
 import PhotosUI
 
 struct ProfileView: View {
@@ -63,7 +64,7 @@ struct ProfileView: View {
                                     }
                                 }
                                 .disabled(isUploading)
-                                .onChange(of: selectedItem) { _ in uploadAvatar() }
+                                .onChange(of: selectedItem) { _, _ in uploadAvatar() }
                                 .shadow(color: AppTheme.primary.opacity(0.2), radius: 10)
                                 
                                 VStack(spacing: 4) {

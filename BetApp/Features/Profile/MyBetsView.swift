@@ -77,73 +77,73 @@ struct WagerHistoryCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.s) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.m) {
             HStack {
                 Text(wager.title)
-                    .font(.headline)
-                    .foregroundColor(AppTheme.textPrimary)
+                    .font(.title3.bold())
+                    .foregroundColor(.white)
                     .lineLimit(1)
                 Spacer()
                 Text(wager.status.uppercased())
-                    .font(.system(size: 10, weight: .black))
-                    .padding(.horizontal, 8)
+                    .font(.system(size: 11, weight: .black))
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(statusColor)
                     .foregroundColor(.black)
-                    .cornerRadius(4)
+                    .cornerRadius(6)
             }
             
             HStack {
                 Text(wager.outcomeLabel)
-                    .font(.subheadline).bold()
-                    .foregroundColor(AppTheme.textPrimary)
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
                 
                 if let winner = wager.winningOutcomeLabel, wager.status == "lost" {
                     Text("•")
-                        .foregroundColor(AppTheme.textSecondary)
+                        .foregroundColor(.white)
                     Text("Winner: \(winner)")
-                        .font(.caption2)
+                        .font(.subheadline.bold())
                         .foregroundColor(AppTheme.oddsUp)
                 }
                 
                 Spacer()
                 Text("@ \(String(format: "%.2f", wager.lockedCoefficient))")
-                    .font(.system(.subheadline, design: .monospaced))
+                    .font(.system(.title3, design: .monospaced))
                     .bold()
                     .foregroundColor(AppTheme.primary)
             }
             .padding(.vertical, 4)
             
-            Divider().background(AppTheme.textSecondary.opacity(0.2))
+            Divider().background(AppTheme.primary.opacity(0.3)) // No more grey divider
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("STAKE")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(.white) // No more grey text
                     Text("\(String(format: "%.2f", wager.stake))€")
-                        .font(.title3.bold())
-                        .foregroundColor(AppTheme.textPrimary)
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
                 }
                 
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(wager.status == "won" ? "PAYOUT" : "POTENTIAL")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(.white) // No more grey text
                     Text("\(String(format: "%.2f", wager.potentialReturn))€")
-                        .font(.title3.bold())
-                        .foregroundColor(wager.status == "won" ? AppTheme.oddsUp : AppTheme.textPrimary)
+                        .font(.title2.bold())
+                        .foregroundColor(wager.status == "won" ? AppTheme.oddsUp : .white)
                 }
             }
         }
         .padding()
-        .background(AppTheme.cardBackground) // Slightly lighter than pure black to see the card
+        .background(Color.black) // Pure black card, NO grey
         .cornerRadius(AppTheme.Radius.m)
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.m)
-                .stroke(AppTheme.primary.opacity(0.8), lineWidth: 1.5) // Strong gold border for all
+                .stroke(wager.status == "active" ? AppTheme.primary : AppTheme.primary.opacity(0.5), lineWidth: 2) // Bright gold border
         )
     }
 }

@@ -30,10 +30,12 @@ struct MainTabView: View {
                     Label("Explore", systemImage: "magnifyingglass")
                 }
             
-            MyBetsView()
-                .tabItem {
-                    Label("My Bets", systemImage: "ticket.fill")
-                }
+            NavigationView {
+                MyBetsView()
+            }
+            .tabItem {
+                Label("My Bets", systemImage: "ticket.fill")
+            }
             
             NotificationsView()
                 .tabItem {
